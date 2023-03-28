@@ -1,7 +1,7 @@
 #buscaminas {
     display: flex;
     flex-direction: column;
-
+    overflow: hidden; 
 }
 
 .t-tablero {
@@ -49,27 +49,42 @@
 }
 
 .t-i{
-    background-image: url( '/assets/casilla-i.svg' );
+    background-image: url( /assets/casilla-i.svg );
 }
 
 .t-o{
-    background-image: url( '/assets/casilla-o.svg' );
+    background-image: url( /assets/casilla-o.svg );
 }
 
 .t-t{
-    background-image: url( '/assets/casilla-t.svg' );
+    background-image: url( /assets/casilla-t.svg );
 }
 
 .t-s{
-    background-image: url( '/assets/casilla-s.svg' );
+    background-image: url( /assets/casilla-s.svg );
 }
 
 .t-j{
-    background-image: url( '/assets/casilla-j.svg' );
+    background-image: url( /assets/casilla-j.svg );
 }
 .t-z{
-    background-image: url( '/assets/casilla-z.svg' );
+    background-image: url( /assets/casilla-z.svg );
 }
 .t-l{
-    background-image: url( '/assets/casilla-l.svg' );
+    background-image: url( /assets/casilla-l.svg );
 }
+
+@font-face {
+    font-family: tetris;
+    src: url(assets/Tetris.ttf);
+}
+
+.t-countdown {
+     position: absolute; 
+     font-size: 10em;
+     color: white;
+     font-family: Tetris;
+     margin-top: 30px;
+     margin-left: 100px;
+     z-index: 10;
+};

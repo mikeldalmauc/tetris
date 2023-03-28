@@ -10,9 +10,9 @@ import Debug exposing (toString)
 
 type alias Tablero = Matrix Tile
 
-type Tetrad = I | O | T | S | J | Z | L 
+type Tetramino = I | O | T | S | J | Z | L 
 
-type Tile = Empty | Filled Tetrad
+type Tile = Empty | Filled Tetramino
 
 
 initTablero : Tablero
@@ -32,14 +32,13 @@ viewTablero tablero countdown =
                 , List.map (\row -> viewRow (Matrix.getXs tablero row)) (List.range 0 (x - 1))
             ]
 
+
 viewCountdown :  Int -> Html msg
 viewCountdown n = 
     case n of
         0 -> span [][]
-
         _ -> 
-            span [ style "font-size" "10em"
-            ][text (toString n)]
+            span [ Attrs.class "t-countdown"] [text (toString n)]
 
 
 viewRow : Array Tile -> Html msg
@@ -48,19 +47,21 @@ viewRow row =
         [ Attrs.class "t-row"]
         (toList (Array.map viewTile row))
 
+
 viewTile : Tile -> Html msg
 viewTile tile = 
     case tile of
-        Filled tetrad ->
+        Filled tetramino ->
             li 
-                [ Attrs.classList [("t-tile", True), (tileSvg tetrad, True)]]
+                [ Attrs.classList [("t-tile", True), (tileSvg tetramino, True)]]
                 []
         Empty -> 
             li
                 [Attrs.class "t-tile-empty"]
                 []
 
-tileSvg : Tetrad -> String
+
+tileSvg : Tetramino -> String
 tileSvg t = 
     case t of
         I -> "t-i"

@@ -15,10 +15,14 @@ which is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike
 -}
 
 
-import Html exposing (Attribute, Html, div, h1, h3, p, pre, text, button)
+import Html exposing (Html, div, h1, h3, p, pre, text, button)
 import Html.Attributes as Attrs exposing (style)
 import Html.Events exposing (onClick)
+
 import Keyboard.Event exposing (KeyboardEvent, decodeKeyboardEvent)
+import Keyboard.Key as Key
+
+-- import Keyboard.Event.KeyCode exposing (Key(..))
 import Browser
 import Browser.Events exposing (onKeyDown)
 import Json.Decode as Json
@@ -27,7 +31,7 @@ import Time
 import Process
 import Task
 
-import Tablero exposing (Tablero, initTablero, viewTablero)
+import Tablero exposing (Tablero, Tetramino(..),  initTablero, viewTablero)
 
 type alias Model =
 
@@ -35,6 +39,9 @@ type alias Model =
       , tablero: Tablero
       , lastEvent : Maybe KeyboardEvent
       , state: GameState
+      , active : Tetramino
+      , next : Tetramino
+      , hold : Maybe Tetramino
     }
 
 
@@ -53,25 +60,41 @@ update msg model =
         Countdown n ->
             case n of
                 3 ->  ( { model | 
-                      tablero =initTablero
-                    , points = 0
-                    , state = (Starting n)} , (delay 1000 (Countdown (n-1))))
+                            tablero =initTablero
+                            , points = 0
+                            , state = (Starting n)} 
+                    , (delay 1000 (Countdown (n - 1))))
 
                 0 -> ( { model | state = Playing} , Cmd.none)
 
-                _ ->  ( { model | state = (Starting n)} , (delay 1000 (Countdown (n-1))))
+                _ ->  ( { model | state = (Starting n)} , (delay 1000 (Countdown (n - 1))))
 
 
         HandleKeyboardEvent event ->
-            ( { model | lastEvent = Just event }
-            , Cmd.none
-            )
+            let
+                newModel = { model | lastEvent = Just event }
+            in
+                if model.state == Playing then
+                    case event.keyCode of
+                        Key.Right -> (newModel, Cmd.none)
+                        Key.Left -> (newModel, Cmd.none)
+                        Key.Up -> (newModel, Cmd.none)
+                        Key.Down -> (newModel, Cmd.none)
+                        Key.C -> (newModel, Cmd.none)
+                        Key.Z -> (newModel, Cmd.none)
+                        Key.Spacebar -> (newModel, Cmd.none)
+                        Key.Escape -> (newModel, Cmd.none)
+                        _ -> (newModel, Cmd.none)
+                else
+                    (newModel, Cmd.none)
+
 
         None -> (model, Cmd.none)
 
 
+
 delay : Float -> msg -> Cmd msg
-delay time msg =
+delay time msg =    
     -- create a task that sleeps for `time`
     Process.sleep time
         |> -- once the sleep is over, ignore its output (using `always`)
@@ -82,6 +105,7 @@ delay time msg =
            -- returns it to our update function
            Task.perform identity
 
+
 view : Model -> Html Msg
 view model =
     let
@@ -91,13 +115,19 @@ view model =
     in    
         Html.main_
             [Attrs.id "buscaminas"]
-            [ button [ onClick <| Countdown 3 ] [ text "Start" ]
+            [ viewStartButton model.state
             , viewTablero model.tablero countdown
             , viewEvent model.lastEvent]
 
 
+viewStartButton : GameState -> Html Msg
+viewStartButton state = 
+    case state of
+        NotStarted -> button [onClick <| Countdown 3] [ text "Start" ]
+        _ -> button [ Attrs.disabled True] [ text "Start" ]
 
 
+        
 viewEvent : Maybe KeyboardEvent -> Html Msg
 viewEvent maybeEvent =
     case maybeEvent of
@@ -118,7 +148,6 @@ viewEvent maybeEvent =
         Nothing ->
             p [] [ text "No event yet" ]
 
--- SUBSCRIPTIONS
 
 -- Subscribe to the `messageReceiver` port to hear about messages coming in
 -- from JS. Check out the index.html file to see how this is hooked up to a
@@ -131,16 +160,19 @@ subscriptions model =
         ]
 
 
-
 init : ( Model, Cmd Msg )
 init =
     ( {   lastEvent = Nothing 
         , points = 0
         , tablero = initTablero
         , state = NotStarted
+        , active = O
+        , next = O
+        , hold = Nothing
       }
     , Cmd.none
     )
+
 
 main : Program () Model Msg
 main =
