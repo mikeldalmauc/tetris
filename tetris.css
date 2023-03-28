@@ -1,0 +1,75 @@
+#buscaminas {
+    display: flex;
+    flex-direction: column;
+
+}
+
+.t-tablero {
+    min-width: 300px;
+    min-height: 600px;
+    /* margin:  10% 32% 18% 32%; */
+    background-color: rgb(10, 10, 10);
+    border-style: groove;
+    border-width: 15px;
+    user-select: none;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+}
+
+.t-row {
+    min-width: 100%;
+    min-height: 5%;
+    position: relative;
+    margin: unset;
+    padding-inline-start: unset;
+    display: flex;
+    list-style: none;
+    flex-direction: row;
+}
+
+.t-tile .t-tile-empty {
+      min-width: 30px;
+      min-height: 30px;
+      background-color: rgb(10, 10, 10);
+      list-style: none;
+}
+
+.t-tile-empty {
+
+}
+
+.t-tile {
+      min-width: 30px;
+      min-height: 30px;
+      background-position: center center;
+      background-repeat: no-repeat;
+      overflow: hidden;
+      background-size: cover;
+}
+
+.t-i{
+    background-image: url( '/assets/casilla-i.svg' );
+}
+
+.t-o{
+    background-image: url( '/assets/casilla-o.svg' );
+}
+
+.t-t{
+    background-image: url( '/assets/casilla-t.svg' );
+}
+
+.t-s{
+    background-image: url( '/assets/casilla-s.svg' );
+}
+
+.t-j{
+    background-image: url( '/assets/casilla-j.svg' );
+}
+.t-z{
+    background-image: url( '/assets/casilla-z.svg' );
+}
+.t-l{
+    background-image: url( '/assets/casilla-l.svg' );
+}

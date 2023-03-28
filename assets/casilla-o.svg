@@ -1,0 +1,29 @@
+<svg id="marco_copy" data-name="marco copy" xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #747500;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4 {
+        fill-rule: evenodd;
+      }
+
+      .cls-2 {
+        fill: #d4d700;
+      }
+
+      .cls-3 {
+        fill: #ffff97;
+      }
+
+      .cls-4 {
+        fill: #f0f001;
+      }
+    </style>
+  </defs>
+  <path id="Rectangle_1_copy_3" data-name="Rectangle 1 copy 3" class="cls-1" d="M-5.223,502.618h510.46L249.792,247.382h0Z"/>
+  <path id="Rectangle_1_copy_7" data-name="Rectangle 1 copy 7" class="cls-2" d="M-4.175-4.162h0V504.175h0L250,249.793h0Zm508.35,508.324h0V-4.175h0L250,250.207h0Z"/>
+  <path id="Rectangle_1_copy_5" data-name="Rectangle 1 copy 5" class="cls-3" d="M501.269-.641H-1.283L250.2,250.641h0Z"/>
+  <path id="Rectangle_1_copy_10" data-name="Rectangle 1 copy 10" class="cls-4" d="M448.34,51.66V447.92H52.08V51.66H448.34Z"/>
+</svg>
