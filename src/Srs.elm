@@ -26,46 +26,46 @@ tetrominoCoordinates : Tetramino -> List {x : Int, y : Int}
 tetrominoCoordinates t =
     case t of
         I ->
-            [ { x = 0, y = 1 }
-            , { x = 1, y = 1 }
-            , { x = 2, y = 1 }
-            , { x = 3, y = 1 }
+            [ { y = 0, x = 1 }
+            , { y = 1, x = 1 }
+            , { y = 2, x = 1 }
+            , { y = 3, x = 1 }
             ]
         O ->
-            [ { x = 0, y = 0 }
-            , { x = 0, y = 1 }
-            , { x = 1, y = 0 }
-            , { x = 1, y = 1 }
+            [ { y = 0, x = 0 }
+            , { y = 0, x = 1 }
+            , { y = 1, x = 0 }
+            , { y = 1, x = 1 }
             ]
         T ->
-            [ { x = 0, y = 1 }
-            , { x = 1, y = 1 }
-            , { x = 2, y = 1 }
-            , { x = 1, y = 0 }
+            [ { y = 0, x = 1 }
+            , { y = 1, x = 1 }
+            , { y = 2, x = 1 }
+            , { y = 1, x = 0 }
             ]
         S ->
-            [ { x = 1, y = 0 }
-            , { x = 2, y = 0 }
-            , { x = 0, y = 1 }
-            , { x = 1, y = 1 }
+            [ { y = 1, x = 0 }
+            , { y = 2, x = 0 }
+            , { y = 0, x = 1 }
+            , { y = 1, x = 1 }
             ]
         J ->
-            [ { x = 0, y = 0 }
-            , { x = 0, y = 1 }
-            , { x = 1, y = 1 }
-            , { x = 2, y = 1 }
+            [ { y = 0, x = 0 }
+            , { y = 0, x = 1 }
+            , { y = 1, x = 1 }
+            , { y = 2, x = 1 }
             ]
         Z ->
-            [ { x = 0, y = 0 }
-            , { x = 1, y = 0 }
-            , { x = 1, y = 1 }
-            , { x = 2, y = 1 }
+            [ { y = 0, x = 0 }
+            , { y = 1, x = 0 }
+            , { y = 1, x = 1 }
+            , { y = 2, x = 1 }
             ]
         L ->
-            [ { x = 2, y = 0 }
-            , { x = 0, y = 1 }
-            , { x = 1, y = 1 }
-            , { x = 2, y = 1 }
+            [ { y = 2, x = 0 }
+            , { y = 0, x = 1 }
+            , { y = 1, x = 1 }
+            , { y = 2, x = 1 }
             ]
             
 type alias Piece =
@@ -92,23 +92,3 @@ type alias WallKickData =
 type alias WallKickTable =
     Dict Int (Dict Bool WallKickData)
 
-wallKickTable : WallKickTable
-wallKickTable =
-    Dict.fromList
-        [ (0, Dict.fromList
-            [ (True, WallKickData { offset = { x = -1, y = 0 }, clockwiseOffsets = [ { x = -1, y = 0 }, { x = -1, y = 1 }, { x = 0, y = -2 }, { x = -1, y = -2 } ], counterclockwiseOffsets = [ { x = 1, y = 0 }, { x = 1, y = 1 }, { x = 0, y = -2 }, { x = 1, y = -2 } ] })
-            , (False, WallKickData { offset = { x = 1, y = 0 }, clockwiseOffsets = [ { x = 1, y = 0 }, { x = 1, y = -1 }, { x = 0, y = 2 }, { x = 1, y = 2 } ], counterclockwiseOffsets = [ { x = -1, y = 0 }, { x = -1, y = -1 }, { x = 0, y = 2 }, { x = -1, y = 2 } ] })
-            ])
-        , (1, Dict.fromList
-            [ (True, WallKickData { offset = { x = 0, y = 0 }, clockwiseOffsets = [ { x = 1, y = 0 }, { x = 1, y = -1 }, { x = 0, y = 2 }, { x = 1, y = 2 } ], counterclockwiseOffsets = [ { x = -1, y = 0 }, { x = -1, y = -1 }, { x = 0, y = 2 }, { x = -1, y = 2 } ] })
-            , (False, WallKickData { offset = { x = 0, y = 0 }, clockwiseOffsets = [ { x = -1, y = 0 }, { x = -1, y = 1 }, { x = 0, y = -2 }, { x = -1, y = -2 } ], counterclockwiseOffsets = [ { x = 1, y = 0 }, { x = 1, y = 1 }, { x = 0, y = -2 }, { x = 1, y = -2 } ] })
-            ])
-        , (2, Dict.fromList
-            [ (True, WallKickData { offset = { x = 0, y = 0 }, clockwiseOffsets = [ { x = -1, y = 0 }, { x = -1, y = -1 }, { x = 0, y = 2 }, { x =-2, y= } ], counterclockwiseOffsets = [ { x = 1, y = 0 }, { x = 1, y = -1 }, { x = 0, y = 2 }, { x = 1, y = 2 } ] })
-            , (False, WallKickData { offset = { x = 0, y = 0 }, clockwiseOffsets = [ { x = 1, y = 0 }, { x = 1, y = -1 }, { x = 0, y = 2 }, { x = 1, y = 2 } ], counterclockwiseOffsets = [ { x = -1, y = 0 }, { x = -1, y = 1 }, { x = 0, y = -2 }, { x = -1, y = -2 } ] })
-            ])
-        , (3, Dict.fromList
-            [ (True, WallKickData { offset = { x = 1, y = 0 }, clockwiseOffsets = [ { x = 1, y = 0 }, { x = 1, y = 1 }, { x = 0, y = -2 }, { x = 1, y = -2 } ], counterclockwiseOffsets = [ { x = -1, y = 0 }, { x = -1, y = 1 }, { x = 0, y = -2 }, { x = -1, y = -2 } ] })
-            , (False, WallKickData { offset = { x = -1, y = 0 }, clockwiseOffsets = [ { x = -1, y = 0 }, { x = -1, y = -1 }, { x = 0, y = 2 }, { x = -1, y = 2 } ], counterclockwiseOffsets = [ { x = 1, y = 0 }, { x = 1, y = -1 }, { x = 0, y = 2 }, { x = 1, y = 2 } ] })
-            ])
-        ]

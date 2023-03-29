@@ -1,19 +1,4 @@
-
 module Main exposing (main, Model, GameState)
-
-{-| HEADS UP! You can view this example alongside the running code at
-
-
-We're going to make confetti come out of the party popper emoji: 🎉
-([emojipedia](https://emojipedia.org/party-popper/)) Specifically, we're going
-to lift our style from [Mutant Standard][ms], a wonderful alternate emoji set,
-which is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike
-4.0 International License.
-
-[ms]: https://mutant.tech/
-
--}
-
 
 import Html exposing (Html, div, h1, h3, p, pre, text, button)
 import Html.Attributes as Attrs exposing (style)
@@ -31,7 +16,8 @@ import Time
 import Process
 import Task
 
-import Tablero exposing (Tablero, Tetramino(..),  initTablero, viewTablero)
+import Tablero exposing (Tablero, initTablero, viewTablero)
+import Tetramino exposing (..)
 
 type alias Model =
 
@@ -39,9 +25,10 @@ type alias Model =
       , tablero: Tablero
       , lastEvent : Maybe KeyboardEvent
       , state: GameState
-      , active : Tetramino
-      , next : Tetramino
-      , hold : Maybe Tetramino
+      , active : Maybe Piece
+      , next : Maybe Piece
+      , hold : Maybe Piece
+      , rotations : Rotations
     }
 
 
@@ -51,6 +38,7 @@ type Msg =
       HandleKeyboardEvent KeyboardEvent
     -- handle startup
     | Countdown Int
+    | Advance
     | None
 
 
@@ -60,15 +48,17 @@ update msg model =
         Countdown n ->
             case n of
                 3 ->  ( { model | 
-                            tablero =initTablero
+                            tablero = initTablero
                             , points = 0
                             , state = (Starting n)} 
                     , (delay 1000 (Countdown (n - 1))))
 
-                0 -> ( { model | state = Playing} , Cmd.none)
+                0 -> ( { model | state = Playing, active = Just <| initPiece T model.rotations} , (delay 1000 Advance))
 
                 _ ->  ( { model | state = (Starting n)} , (delay 1000 (Countdown (n - 1))))
 
+        Advance ->
+            ({model | active = advancePiece model.active },  (delay 1000 Advance))
 
         HandleKeyboardEvent event ->
             let
@@ -76,12 +66,12 @@ update msg model =
             in
                 if model.state == Playing then
                     case event.keyCode of
-                        Key.Right -> (newModel, Cmd.none)
-                        Key.Left -> (newModel, Cmd.none)
-                        Key.Up -> (newModel, Cmd.none)
-                        Key.Down -> (newModel, Cmd.none)
+                        Key.Right ->  ({model | active = moveRight model.active}, Cmd.none)
+                        Key.Left ->   ({model | active = moveLeft model.active}, Cmd.none)
+                        Key.Up -> ({model | active = rotateRight model.active model.rotations}, Cmd.none)
+                        Key.Down ->  ({model | active = advancePiece model.active}, Cmd.none)
                         Key.C -> (newModel, Cmd.none)
-                        Key.Z -> (newModel, Cmd.none)
+                        Key.Z -> ({model | active = rotateLeft model.active model.rotations}, Cmd.none)
                         Key.Spacebar -> (newModel, Cmd.none)
                         Key.Escape -> (newModel, Cmd.none)
                         _ -> (newModel, Cmd.none)
@@ -114,9 +104,9 @@ view model =
             _ -> 0
     in    
         Html.main_
-            [Attrs.id "buscaminas"]
+            [Attrs.id "tetris"]
             [ viewStartButton model.state
-            , viewTablero model.tablero countdown
+            , viewTablero model.tablero model.active countdown 
             , viewEvent model.lastEvent]
 
 
@@ -159,13 +149,6 @@ subscriptions model =
         [ onKeyDown (Json.map HandleKeyboardEvent decodeKeyboardEvent)
         ]
 
-initTest : Tablero 
-initTest = 
-    let 
-        tablero = ininitTablero
-    in 
-        
-
 
 init : ( Model, Cmd Msg )
 init =
@@ -173,9 +156,10 @@ init =
         , points = 0
         , tablero = initTablero
         , state = NotStarted
-        , active = O
-        , next = O
+        , active = Nothing
+        , next = Nothing
         , hold = Nothing
+        , rotations = rotations
       }
     , Cmd.none
     )

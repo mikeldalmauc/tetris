@@ -1,4 +1,4 @@
-#buscaminas {
+#tetris {
     display: flex;
     flex-direction: column;
     overflow: hidden; 
@@ -18,8 +18,8 @@
 }
 
 .t-row {
-    min-width: 100%;
-    min-height: 5%;
+    min-width: 300px;
+    min-height: 30px;
     position: relative;
     margin: unset;
     padding-inline-start: unset;
@@ -28,7 +28,7 @@
     flex-direction: row;
 }
 
-.t-tile .t-tile-empty {
+.t-tile, .t-tile-empty {
       min-width: 30px;
       min-height: 30px;
       background-color: rgb(10, 10, 10);

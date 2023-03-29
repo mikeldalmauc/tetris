@@ -7,13 +7,11 @@ import Array exposing (Array)
 import Array exposing (toList)
 import List
 import Debug exposing (toString)
-import Tetramino exposing (Tetramino, cssClass)
+import Tetramino exposing (Tetramino, Piece, cssClass)
+import Array exposing (foldl)
+import Dict exposing (Dict)
 
-type alias Coordinate =
-    { x : Int
-    , y : Int
-    }
-    
+
 type alias Tablero = Matrix Tile
 
 type Tile = Empty | Filled Tetramino
@@ -22,17 +20,20 @@ initTablero : Tablero
 initTablero = Matrix.repeat 20 10 Empty
 
 
-viewTablero : Tablero -> Int -> Html msg
-viewTablero tablero countdown = 
+viewTablero : Tablero -> Maybe Piece -> Int -> Html msg
+viewTablero tablero piece countdown = 
     let
         (x, y) = Matrix.size tablero
-
+        renderedTablero = 
+            case piece of 
+                Just p -> List.foldl (\block newTablero -> Matrix.set newTablero (block.x+p.origin.x) (block.y+p.origin.y) (Filled p.tetramino)) tablero p.blocks 
+                Nothing -> tablero
     in
         Html.section 
             [Attrs.class "t-tablero"]
             <| List.concat [
                   [viewCountdown countdown]
-                , List.map (\row -> viewRow (Matrix.getXs tablero row)) (List.range 0 (x - 1))
+                , List.map (\row -> viewRow (Matrix.getXs renderedTablero row) row) (List.range 0 (x - 1))
             ]
 
 
@@ -44,15 +45,15 @@ viewCountdown n =
             span [ Attrs.class "t-countdown"] [text (toString n)]
 
 
-viewRow : Array Tile -> Html msg
-viewRow row = 
+viewRow : Array Tile -> Int -> Html msg
+viewRow row index = 
     ul 
         [ Attrs.class "t-row"]
-        (toList (Array.map viewTile row))
+        (toList (Array.map (\r -> viewTile r index) row))
 
 
-viewTile : Tile -> Html msg
-viewTile tile = 
+viewTile : Tile -> Int -> Html msg
+viewTile tile rIndex = 
     case tile of
         Filled tetramino ->
             li 
@@ -61,6 +62,6 @@ viewTile tile =
         Empty -> 
             li
                 [Attrs.class "t-tile-empty"]
-                []
+                [text <| toString rIndex]
 
 
