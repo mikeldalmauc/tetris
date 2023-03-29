@@ -159,6 +159,13 @@ subscriptions model =
         [ onKeyDown (Json.map HandleKeyboardEvent decodeKeyboardEvent)
         ]
 
+initTest : Tablero 
+initTest = 
+    let 
+        tablero = ininitTablero
+    in 
+        
+
 
 init : ( Model, Cmd Msg )
 init =

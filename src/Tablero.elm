@@ -7,13 +7,16 @@ import Array exposing (Array)
 import Array exposing (toList)
 import List
 import Debug exposing (toString)
+import Tetramino exposing (Tetramino, cssClass)
 
+type alias Coordinate =
+    { x : Int
+    , y : Int
+    }
+    
 type alias Tablero = Matrix Tile
 
-type Tetramino = I | O | T | S | J | Z | L 
-
 type Tile = Empty | Filled Tetramino
-
 
 initTablero : Tablero
 initTablero = Matrix.repeat 20 10 Empty
@@ -53,22 +56,11 @@ viewTile tile =
     case tile of
         Filled tetramino ->
             li 
-                [ Attrs.classList [("t-tile", True), (tileSvg tetramino, True)]]
+                [ Attrs.classList [("t-tile", True), (cssClass tetramino, True)]]
                 []
         Empty -> 
             li
                 [Attrs.class "t-tile-empty"]
                 []
 
-
-tileSvg : Tetramino -> String
-tileSvg t = 
-    case t of
-        I -> "t-i"
-        O -> "t-o"
-        T -> "t-t"
-        S -> "t-s"
-        J -> "t-j"
-        Z -> "t-z"
-        L -> "t-l"
 
