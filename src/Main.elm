@@ -66,12 +66,12 @@ update msg model =
             in
                 if model.state == Playing then
                     case event.keyCode of
-                        Key.Right ->  ({model | active = moveRight model.active}, Cmd.none)
-                        Key.Left ->   ({model | active = moveLeft model.active}, Cmd.none)
-                        Key.Up -> ({model | active = rotateRight model.active model.rotations}, Cmd.none)
-                        Key.Down ->  ({model | active = advancePiece model.active}, Cmd.none)
+                        Key.Right ->  ({newModel | active = moveRight model.active}, Cmd.none)
+                        Key.Left ->   ({newModel | active = moveLeft model.active}, Cmd.none)
+                        Key.Up -> ({newModel | active = rotateRight model.active model.rotations}, Cmd.none)
+                        Key.Down ->  ({newModel | active = advancePiece model.active}, Cmd.none)
                         Key.C -> (newModel, Cmd.none)
-                        Key.Z -> ({model | active = rotateLeft model.active model.rotations}, Cmd.none)
+                        Key.Z -> ({newModel | active = rotateLeft model.active model.rotations}, Cmd.none)
                         Key.Spacebar -> (newModel, Cmd.none)
                         Key.Escape -> (newModel, Cmd.none)
                         _ -> (newModel, Cmd.none)

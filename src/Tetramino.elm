@@ -26,9 +26,9 @@ type alias Piece =
 initPiece : Tetramino -> Rotations -> Piece 
 initPiece t rts =
         { tetramino = t
-        , blocks  = getBlocks t R1 rts 
+        , blocks  = getBlocks t R4 rts 
         , origin = { x = 0, y = 3}
-        , r  = R1
+        , r  = R4
     }
 
 advancePiece : Maybe Piece -> Maybe Piece 
