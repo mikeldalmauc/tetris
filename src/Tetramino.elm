@@ -4,6 +4,8 @@ import Dict exposing (Dict)
 
 import Matrix exposing(Matrix)
 import Svg.Attributes exposing (origin)
+import List exposing (foldl)
+import Array exposing (fromList, get)
 
 type Tile = Empty | Filled Tetramino
 
@@ -60,8 +62,7 @@ moveRight p tablero =
         newPiece = {piece | origin = {x = piece.origin.x, y = piece.origin.y + 1}}
       in
         if (testMovement newPiece tablero) then newPiece else piece
-      ) p
-
+    ) p
 
 rotateRight : Maybe Piece -> Matrix Tile -> Rotations -> Maybe Piece
 rotateRight piece tablero rts = 
@@ -73,7 +74,8 @@ rotateRight piece tablero rts =
                           R3 -> (rotate rts R4 p)
                           R4 -> (rotate rts R1 p)
            in
-            if (testMovement newPiece tablero) then newPiece else p
+            if (testMovement newPiece tablero) then newPiece
+            else Maybe.withDefault p (attemptKick p.r newPiece tablero)
       ) piece
       
 
@@ -87,8 +89,9 @@ rotateLeft piece tablero rts =
                 R3 ->  (rotate rts R2 p)
                 R4 ->  (rotate rts R3 p)
             in
-              if (testMovement newPiece tablero) then newPiece else p 
-           )piece
+              if (testMovement newPiece tablero) then newPiece 
+              else Maybe.withDefault p (attemptKick p.r newPiece tablero)
+           ) piece
         
 
 rotate : Rotations -> Rotation -> Piece -> Piece
@@ -111,7 +114,7 @@ testOutsideBounds piece tablero =
     testBlock = \block -> not ( block.x < 0 || block.y < 0 || block.x > x || block.y > y)
     reduceFun = \block prev-> prev && (testBlock block)
   in
-    List.foldl reduceFun True blocks
+    foldl reduceFun True blocks
 
 testOverlapp : Piece -> Matrix Tile -> Bool
 testOverlapp piece tablero =
@@ -120,7 +123,7 @@ testOverlapp piece tablero =
     blocks = List.map (\b -> {x = b.x + piece.origin.x, y = b.y + piece.origin.y}) piece.blocks
     reduceFunOverlapps = \block prev -> prev && (noOverlap tablero block)
   in
-    List.foldl reduceFunOverlapps True blocks  
+    foldl reduceFunOverlapps True blocks  
 
 noOverlap : Matrix Tile -> Block -> Bool
 noOverlap tablero {x, y} = 
@@ -163,6 +166,8 @@ toString_r r =
         R3 -> "R3"
         R4 -> "R4"
         
+
+
 -- getBlocks : String -> String -> Rotations -> List Block
 getBlocks : Tetramino -> Rotation -> Rotations -> List Block
 getBlocks t r rts =
@@ -342,3 +347,73 @@ rotationsT =
                 , { x = 1, y = 2 }
                 , { x = 0, y = 1 }])
         ]
+
+
+attemptKick : Rotation -> Piece -> Matrix Tile -> Maybe Piece
+attemptKick rPrev piece tablero = 
+    let
+        reduceFunTests = \test prev -> 
+            case prev of
+                Just p -> Just p
+                Nothing -> 
+                    let 
+                        kick = kickOffset piece.tetramino rPrev piece.r test
+                        newPiece = { piece | origin = { x = kick.x + piece.origin.x, y = kick.y + piece.origin.y}}
+                    in
+                        if (testMovement newPiece tablero) then Just newPiece else Nothing
+    in
+        foldl reduceFunTests Nothing [0, 1, 2, 3]
+        -- if (testMovement newPiece tablero) then newPiece else p 
+
+
+kickOffset : Tetramino -> Rotation -> Rotation -> Int -> Block
+kickOffset t rPrev rAct test =
+    let
+        dir = rotationDirection rPrev rAct
+        block = case t of 
+                    I -> 
+                        case dir of
+                            "clockwise" -> 
+                                case rPrev of
+                                    R1 -> get test <| fromList [{x=-1, y=0}, {x=-1, y=1}, {x=0, y=-2}, {x=-1, y=-2}]
+                                    R2 -> get test <| fromList [{x=1, y=0}, {x=1, y=-1}, {x=0, y=2}, {x=1, y=2}] 
+                                    R3 -> get test <| fromList [{x=1, y=0}, {x=1, y=1}, {x=0, y=-2}, {x=1, y=-2}]
+                                    R4 -> get test <| fromList [{x=-1, y=0}, {x=-1, y=-1}, {x=0, y=2}, {x=-1, y=2}]
+                            _ -> 
+                                case rAct of
+                                    R1 -> get test <| fromList [{x=1, y=0}, {x=1, y=-1}, {x=0, y=2}, {x=1, y=2}]
+                                    R2 -> get test <| fromList [{x=-1, y=0}, {x=-1, y=1}, {x=0, y=-2}, {x=-1, y=-2}]
+                                    R3 -> get test <| fromList [{x=-1, y=0}, {x=-1, y=-1}, {x=0, y=2}, {x=-1, y=2}]
+                                    R4 -> get test <| fromList [{x=1, y=0}, {x=1, y=1}, {x=0, y=-2}, {x=1, y=-2}]
+                    _ -> 
+                        case dir of
+                            "clockwise" -> 
+                                case rPrev of 
+                                    R1 -> get test <| fromList [{x=-2, y= 0}, {x=1, y= 0}, {x=-2, y=-1}, {x=1, y=2}]
+                                    R2 -> get test <| fromList [{x=-1, y= 0}, {x=2, y= 0}, {x=-1, y=2}, {x=2, y=-1}]
+                                    R3 -> get test <| fromList [{x=2, y= 0}, {x=-1, y= 0}, {x=2, y=1}, {x=-1, y=-2}]
+                                    R4 -> get test <| fromList [{x=1, y= 0}, {x=-2, y= 0}, {x=1, y=-2}, {x=-2, y=1}]
+                            _ -> 
+                                case rAct of
+                                    R1 -> get test <| fromList [{x=2, y= 0}, {x=-1, y= 0}, {x=2, y=1}, {x=-1, y=-2}]
+                                    R2 -> get test <| fromList [{x=1, y= 0}, {x=-2, y= 0}, {x=1, y=-2}, {x=-2, y=1}]
+                                    R3 -> get test <| fromList [{x=-2, y= 0}, {x=1, y= 0}, {x=-2, y=-1}, {x=1, y=2}]
+                                    R4 -> get test <| fromList [{x=-1, y= 0}, {x=2, y= 0}, {x=-1, y=2}, {x=2, y=-1}]
+    in 
+        case block of
+            Just b -> b
+            Nothing -> {x = 0, y = 0}
+        
+        
+rotationDirection : Rotation -> Rotation -> String
+rotationDirection  rPrev rAct  =
+    case (rPrev, rAct) of
+        ( R1, R2 ) -> "clockwise"
+        ( R2, R3 ) -> "clockwise"
+        ( R3, R4 ) -> "clockwise"
+        ( R4, R1 ) -> "clockwise"
+        ( R1, R4 ) -> "counterclockwise"
+        ( R4, R3 ) -> "counterclockwise"
+        ( R3, R2 ) -> "counterclockwise"
+        ( R2, R1 ) -> "counterclockwise"
+        _ -> ""
