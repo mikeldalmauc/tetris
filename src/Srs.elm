@@ -1,4 +1,5 @@
 module Srs exposing (..)
+import Keyboard.Key exposing (Key(..))
 
 
 type alias Coordinate =
@@ -89,6 +90,21 @@ type alias WallKickData =
     , counterclockwiseOffsets : List Block
     }
 
-type alias WallKickTable =
-    Dict Int (Dict Bool WallKickData)
+type Direction = Counter | Clockwise
 
+type alias WallKickTable =
+    Dict Int (Dict Orientation WallKickData)
+
+wallKickTable : WallKickTable
+wallKickTable =
+    Dict.fromList
+        [ (0, Dict.fromList
+            [ (Clockwise, WallKickData { offset = { x = -1, y = 0 }, clockwiseOffsets = [ { x = -1, y = 0 }, { x = -1, y = 1 }, { x = 0, y = -2 }, { x = -1, y = -2 } ], counterclockwiseOffsets = [ { x = 1, y = 0 }, { x = 1, y = 1 }, { x = 0, y = -2 }, { x = 1, y = -2 } ] })
+            , (Counter, WallKickData { offset = { x = 1, y = 0 }, clockwiseOffsets = [ { x = 1, y = 0 }, { x = 1, y = -1 }, { x = 0, y = 2 }, { x = 1, y = 2 } ], counterclockwiseOffsets = [ { x = -1, y = 0 }, { x = -1, y = -1 }, { x = 0, y = 2 }, { x = -1, y = 2 } ] })
+            ])
+        , (1, Dict.fromList
+            [ (Clockwise, WallKickData { offset = { x = 0, y = 0 }, clockwiseOffsets = [ { x = 1, y = 0 }, { x = 1, y = -1 }, { x = 0, y = 2 }, { x = 1, y = 2 } ], counterclockwiseOffsets = [ { x = -1, y = 0 }, { x = -1, y = -1 }, { x = 0, y = 2 }, { x = -1, y = 2 } ] })
+            , (Counter, WallKickData { offset = { x = 0, y = 0 }, clockwiseOffsets = [ { x = -1, y = 0 }, { x = -1, y = 1 }, { x = 0, y = -2 }, { x = -1, y = -2 } ], counterclockwiseOffsets = [ { x = 1, y = 0 }, { x = 1, y = 1 }, { x = 0, y = -2 }, { x = 1, y = -2 } ] })
+            ])
+        , (2, Dict.fromList
+            [ (Clockwise, WallKickData { offset = { x = 0, y = 0 }, clockwiseOffsets = [ { x = -1, y = 0 }, { x = -1, y = 1 }, { x = 0, y = -2 }, { x = -1, y = -2 } ])

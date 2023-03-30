@@ -6,7 +6,7 @@ Tetris game in elm
  ```
  elm make src/Main.elm --output build/main.js
  ```
-elm make src/Main.elm --output build/tetris.js
+elm make elm/src/Main.elm --output build/tetris.js
 
 elm make elm/src/Main.elm --output --optimize build/tetris.js
 
@@ -26,5 +26,7 @@ Para optimizar codigo para producción Leer: https://github.com/elm/compiler/blo
 # Arrancar la web
 Live server sobre app.html 
 
+# References
 
-https://tetris.fandom.com/wiki/SRS
+https://tetris.wiki/Super_Rotation_System
+https://tetris.wiki/Tetris_Dimensions

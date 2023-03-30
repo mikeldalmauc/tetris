@@ -2,7 +2,10 @@ module Tetramino exposing (..)
 
 import Dict exposing (Dict)
 
+import Matrix exposing(Matrix)
+import Svg.Attributes exposing (origin)
 
+type Tile = Empty | Filled Tetramino
 
 type Tetramino = I | O | T | S | J | Z | L 
 
@@ -31,43 +34,103 @@ initPiece t rts =
         , r  = R4
     }
 
-advancePiece : Maybe Piece -> Maybe Piece 
-advancePiece p =
-    Maybe.map (\piece -> {piece | origin = {x = piece.origin.x + 1, y = piece.origin.y}}) p
+advancePiece : Maybe Piece -> Matrix Tile -> Maybe Piece 
+advancePiece p tablero =
+    Maybe.map (\piece -> 
+      let
+        newPiece = {piece | origin = {x = piece.origin.x + 1, y = piece.origin.y}}
+      in
+        if (testMovement newPiece tablero) then newPiece else piece
+      ) p
 
-moveLeft : Maybe Piece -> Maybe Piece 
-moveLeft p =
-  Maybe.map (\piece -> {piece | origin = {x = piece.origin.x, y = piece.origin.y - 1}}) p
-  
-moveRight : Maybe Piece -> Maybe Piece 
-moveRight p =
-  Maybe.map (\piece -> {piece | origin = {x = piece.origin.x, y = piece.origin.y + 1}}) p
 
-rotateRight : Maybe Piece -> Rotations -> Maybe Piece
-rotateRight piece rts = 
+moveLeft : Maybe Piece -> Matrix Tile -> Maybe Piece 
+moveLeft p tablero =
+  Maybe.map (\piece ->
+      let
+        newPiece = {piece | origin = {x = piece.origin.x, y = piece.origin.y - 1}}
+      in
+        if (testMovement newPiece tablero) then newPiece else piece
+      ) p
+
+moveRight : Maybe Piece -> Matrix Tile  -> Maybe Piece 
+moveRight p tablero =
+  Maybe.map (\piece ->
+      let
+        newPiece = {piece | origin = {x = piece.origin.x, y = piece.origin.y + 1}}
+      in
+        if (testMovement newPiece tablero) then newPiece else piece
+      ) p
+
+
+rotateRight : Maybe Piece -> Matrix Tile -> Rotations -> Maybe Piece
+rotateRight piece tablero rts = 
     Maybe.map (\p -> 
-                case p.r of
-                    R1 -> (rotate rts R2 p)
-                    R2 -> (rotate rts R3 p)
-                    R3 -> (rotate rts R4 p)
-                    R4 -> (rotate rts R1 p))  
-        piece
-        
+            let 
+              newPiece = case p.r of
+                          R1 -> (rotate rts R2 p)
+                          R2 -> (rotate rts R3 p)
+                          R3 -> (rotate rts R4 p)
+                          R4 -> (rotate rts R1 p)
+           in
+            if (testMovement newPiece tablero) then newPiece else p
+      ) piece
+      
 
-rotateLeft : Maybe Piece -> Rotations -> Maybe Piece
-rotateLeft piece rts = 
+rotateLeft : Maybe Piece -> Matrix Tile -> Rotations -> Maybe Piece
+rotateLeft piece tablero rts = 
     Maybe.map (\p -> 
-            case p.r of
+            let 
+              newPiece = case p.r of
                 R1 ->  (rotate rts R4 p)
                 R2 ->  (rotate rts R1 p)
                 R3 ->  (rotate rts R2 p)
-                R4 ->  (rotate rts R3 p))
-        piece
+                R4 ->  (rotate rts R3 p)
+            in
+              if (testMovement newPiece tablero) then newPiece else p 
+           )piece
         
 
 rotate : Rotations -> Rotation -> Piece -> Piece
 rotate rts r p = 
     {p | blocks = (getBlocks p.tetramino p.r rts), r = r}
+
+
+testMovement : Piece -> Matrix Tile -> Bool
+testMovement piece tablero =
+    if (testOutsideBounds piece tablero ) then
+      testOverlapp piece tablero
+    else
+      False
+
+testOutsideBounds : Piece -> Matrix Tile -> Bool
+testOutsideBounds piece tablero =
+  let
+    ( x, y ) = Matrix.size tablero 
+    blocks = List.map (\b -> {x = b.x + piece.origin.x, y = b.y + piece.origin.y}) piece.blocks
+    testBlock = \block -> not ( block.x < 0 || block.y < 0 || block.x > x || block.y > y)
+    reduceFun = \block prev-> prev && (testBlock block)
+  in
+    List.foldl reduceFun True blocks
+
+testOverlapp : Piece -> Matrix Tile -> Bool
+testOverlapp piece tablero =
+  let
+    ( x, y ) = Matrix.size tablero 
+    blocks = List.map (\b -> {x = b.x + piece.origin.x, y = b.y + piece.origin.y}) piece.blocks
+    reduceFunOverlapps = \block prev -> prev && (noOverlap tablero block)
+  in
+    List.foldl reduceFunOverlapps True blocks  
+
+noOverlap : Matrix Tile -> Block -> Bool
+noOverlap tablero {x, y} = 
+    case (Matrix.get tablero x y) of
+      Nothing -> False
+      Just tile -> case tile of
+          Empty -> True
+          Filled _ -> False
+    
+
 
 
 cssClass : Tetramino -> String
@@ -155,9 +218,9 @@ rotationsI : Dict String (List Block)
 rotationsI =
      Dict.fromList 
         [("R1", [ { x = 0, y = 2 }
-            , { x = 1, y = 2 }
-            , { x = 2, y = 2 }
-            , { x = 3, y = 2 }])
+                , { x = 1, y = 2 }
+                , { x = 2, y = 2 }
+                , { x = 3, y = 2 }])
         ,("R2", [ { x = 2, y = 0 }
                 , { x = 2, y = 1 }
                 , { x = 2, y = 2 }

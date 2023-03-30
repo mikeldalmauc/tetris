@@ -7,14 +7,12 @@ import Array exposing (Array)
 import Array exposing (toList)
 import List
 import Debug exposing (toString)
-import Tetramino exposing (Tetramino, Piece, cssClass)
+import Tetramino exposing (Tetramino, Piece, cssClass, Tile(..))
 import Array exposing (foldl)
 import Dict exposing (Dict)
 
 
 type alias Tablero = Matrix Tile
-
-type Tile = Empty | Filled Tetramino
 
 initTablero : Tablero
 initTablero = Matrix.repeat 20 10 Empty

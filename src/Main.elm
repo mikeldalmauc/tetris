@@ -58,7 +58,7 @@ update msg model =
                 _ ->  ( { model | state = (Starting n)} , (delay 1000 (Countdown (n - 1))))
 
         Advance ->
-            ({model | active = advancePiece model.active },  (delay 1000 Advance))
+            ({model | active = advancePiece model.active model.tablero },  (delay 1000 Advance))
 
         HandleKeyboardEvent event ->
             let
@@ -66,12 +66,12 @@ update msg model =
             in
                 if model.state == Playing then
                     case event.keyCode of
-                        Key.Right ->  ({newModel | active = moveRight model.active}, Cmd.none)
-                        Key.Left ->   ({newModel | active = moveLeft model.active}, Cmd.none)
-                        Key.Up -> ({newModel | active = rotateRight model.active model.rotations}, Cmd.none)
-                        Key.Down ->  ({newModel | active = advancePiece model.active}, Cmd.none)
+                        Key.Right ->  ({newModel | active = moveRight model.active model.tablero}, Cmd.none)
+                        Key.Left ->   ({newModel | active = moveLeft model.active model.tablero}, Cmd.none)
+                        Key.Up -> ({newModel | active = rotateRight model.active model.tablero model.rotations }, Cmd.none)
+                        Key.Down ->  ({newModel | active = advancePiece model.active model.tablero}, Cmd.none)
                         Key.C -> (newModel, Cmd.none)
-                        Key.Z -> ({newModel | active = rotateLeft model.active model.rotations}, Cmd.none)
+                        Key.Z -> ({newModel | active = rotateLeft model.active model.tablero model.rotations}, Cmd.none)
                         Key.Spacebar -> (newModel, Cmd.none)
                         Key.Escape -> (newModel, Cmd.none)
                         _ -> (newModel, Cmd.none)
