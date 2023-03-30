@@ -104,7 +104,7 @@ rotateLeft piece tablero rts =
 
 rotate : Rotations -> Rotation -> Piece -> Piece
 rotate rts r p = 
-    {p | blocks = (getBlocks p.tetramino p.r rts), r = r}
+    {p | blocks = (getBlocks p.tetramino r rts), r = r}
 
 
 testMovement : Piece -> Matrix Tile -> Bool
@@ -118,7 +118,7 @@ testOutsideBounds : Piece -> Matrix Tile -> Bool
 testOutsideBounds piece tablero =
   let
     ( x, y ) = Matrix.size tablero 
-    blocks = List.map (\b -> {x = b.x + piece.origin.x, y = b.y + piece.origin.y}) piece.blocks
+    blocks = addOriginOffset piece 
     testBlock = \block -> not ( block.x < 0 || block.y < 0 || block.x > x || block.y > y)
     reduceFun = \block prev-> prev && (testBlock block)
   in
@@ -126,21 +126,23 @@ testOutsideBounds piece tablero =
 
 testOverlapp : Piece -> Matrix Tile -> Bool
 testOverlapp piece tablero =
-  let
-    ( x, y ) = Matrix.size tablero 
-    blocks = List.map (\b -> {x = b.x + piece.origin.x, y = b.y + piece.origin.y}) piece.blocks
-    reduceFunOverlapps = \block prev -> prev && (noOverlap tablero block)
-  in
-    foldl reduceFunOverlapps True blocks  
+    foldl 
+        (\block prev -> prev && (noOverlap tablero block))
+        True 
+        <| addOriginOffset piece  
 
 noOverlap : Matrix Tile -> Block -> Bool
 noOverlap tablero {x, y} = 
     case (Matrix.get tablero x y) of
-      Nothing -> False
-      Just tile -> case tile of
-          Empty -> True
-          Filled _ -> False
-    
+        Nothing -> False
+        Just tile -> case tile of
+            Empty -> True
+            Filled _ -> False
+
+
+addOriginOffset : Piece -> List Block
+addOriginOffset piece =
+    List.map (\b -> {x = b.x + piece.origin.x, y = b.y + piece.origin.y}) piece.blocks
 
 
 toString_t : Tetramino -> String
@@ -161,7 +163,7 @@ toString_r r =
         R2 -> "R2"
         R3 -> "R3"
         R4 -> "R4"
-        
+
 
 -- getBlocks : String -> String -> Rotations -> List Block
 getBlocks : Tetramino -> Rotation -> Rotations -> List Block
@@ -192,26 +194,6 @@ rotations =
         ]
     
 
-rotationsJ : Dict String (List Block)
-rotationsJ =
-     Dict.fromList 
-        [("R1", [ { x = 0, y = 1 }
-                , { x = 0, y = 2 }
-                , { x = 1, y = 1 }
-                , { x = 2, y = 1 }])
-        ,("R2", [ { x = 1, y = 0 }
-                , { x = 1, y = 1 }
-                , { x = 1, y = 2 }
-                , { x = 2, y = 2 }])
-        ,("R3", [ { x = 0, y = 1 }
-                , { x = 1, y = 1 }
-                , { x = 2, y = 1 }
-                , { x = 2, y = 0 }])
-        ,("R4", [ { x = 0, y = 0 }
-                , { x = 1, y = 0 }
-                , { x = 1, y = 1 }
-                , { x = 1, y = 2 }])
-        ]
 
 
 rotationsI : Dict String (List Block)
@@ -236,6 +218,26 @@ rotationsI =
                 , { x = 1, y = 2 }
                 , { x = 1, y = 3 }])
         ]
+rotationsJ : Dict String (List Block)
+rotationsJ =
+     Dict.fromList 
+        [("R1", [ { x = 0, y = 1 }
+                , { x = 0, y = 2 }
+                , { x = 1, y = 1 }
+                , { x = 2, y = 1 }])
+        ,("R2", [ { x = 1, y = 0 }
+                , { x = 1, y = 1 }
+                , { x = 1, y = 2 }
+                , { x = 2, y = 2 }])
+        ,("R3", [ { x = 0, y = 1 }
+                , { x = 1, y = 1 }
+                , { x = 2, y = 1 }
+                , { x = 2, y = 0 }])
+        ,("R4", [ { x = 0, y = 0 }
+                , { x = 1, y = 0 }
+                , { x = 1, y = 1 }
+                , { x = 1, y = 2 }])
+        ]
 
 
 rotationsL : Dict String (List Block)
@@ -253,9 +255,9 @@ rotationsL =
                 , { x = 0, y = 1 }
                 , { x = 1, y = 1 }
                 , { x = 2, y = 1 }])
-        ,("R4", [ { x = 0, y = 0 }
+        ,("R4", [ { x = 0, y = 2 }
+                , { x = 1, y = 0 }
                 , { x = 1, y = 1 }
-                , { x = 1, y = 2 }
                 , { x = 1, y = 2 }])
         ]
 

@@ -18,17 +18,22 @@ initTablero : Int -> Int -> Tablero
 initTablero rows cols = Matrix.repeat rows cols Empty
 
 
-viewTablero : Tablero -> Maybe Piece -> Int -> Html msg
-viewTablero tablero piece countdown = 
+viewTablero : Tablero -> Maybe Piece -> Int -> String -> Html msg
+viewTablero tablero piece countdown class = 
     let
         (x, y) = Matrix.size tablero
         renderedTablero = 
             case piece of 
-                Just p -> insertPiece p tablero
+                Just p -> case class of 
+                    "t-tablero" -> insertPiece p tablero
+                    _ -> insertPiece {p | blocks =  
+                            case p.tetramino of
+                                O -> List.map (\b -> {x = b.x , y= b.y - 3}) p.blocks
+                                _ -> List.map (\b -> {x = b.x + 1, y= b.y - 2}) p.blocks} tablero
                 Nothing -> tablero
     in
         Html.section 
-            [Attrs.class "t-tablero"]
+            [Attrs.class class]
             <| List.concat [
                   [viewCountdown countdown]
                 , List.map (\row -> viewRow (Matrix.getXs renderedTablero row) row) (List.range 0 (x - 1))

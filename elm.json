@@ -1,5 +1,7 @@
 {
     "type": "application",
+    "author" : "mikeldalmauc",
+    "project" : "tetris",
     "source-directories": [
         "src"
     ],
