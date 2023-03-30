@@ -6,6 +6,7 @@ import Matrix exposing(Matrix)
 import Svg.Attributes exposing (origin)
 import List exposing (foldl)
 import Array exposing (fromList, get)
+import Random
 
 type Tile = Empty | Filled Tetramino
 
@@ -26,6 +27,7 @@ type alias Piece =
     , blocks : List Block
     , origin : Block
     , r : Rotation
+    , grounded : Int
     }
 
 initPiece : Tetramino -> Rotations -> Piece 
@@ -34,7 +36,13 @@ initPiece t rts =
         , blocks  = getBlocks t R4 rts 
         , origin = { x = 0, y = 3}
         , r  = R4
+        , grounded = 0
     }
+
+
+pieceGenerator : Random.Generator Tetramino
+pieceGenerator =
+  Random.uniform I [O,T, S, J, Z, L ]
 
 advancePiece : Maybe Piece -> Matrix Tile -> Maybe Piece 
 advancePiece p tablero =
@@ -69,10 +77,10 @@ rotateRight piece tablero rts =
     Maybe.map (\p -> 
             let 
               newPiece = case p.r of
-                          R1 -> (rotate rts R2 p)
-                          R2 -> (rotate rts R3 p)
-                          R3 -> (rotate rts R4 p)
-                          R4 -> (rotate rts R1 p)
+                          R1 -> rotate rts R2 p
+                          R2 -> rotate rts R3 p
+                          R3 -> rotate rts R4 p
+                          R4 -> rotate rts R1 p
            in
             if (testMovement newPiece tablero) then newPiece
             else Maybe.withDefault p (attemptKick p.r newPiece tablero)
@@ -84,10 +92,10 @@ rotateLeft piece tablero rts =
     Maybe.map (\p -> 
             let 
               newPiece = case p.r of
-                R1 ->  (rotate rts R4 p)
-                R2 ->  (rotate rts R1 p)
-                R3 ->  (rotate rts R2 p)
-                R4 ->  (rotate rts R3 p)
+                R1 ->  rotate rts R4 p
+                R2 ->  rotate rts R1 p
+                R3 ->  rotate rts R2 p
+                R4 ->  rotate rts R3 p
             in
               if (testMovement newPiece tablero) then newPiece 
               else Maybe.withDefault p (attemptKick p.r newPiece tablero)
@@ -135,18 +143,6 @@ noOverlap tablero {x, y} =
     
 
 
-
-cssClass : Tetramino -> String
-cssClass t = 
-    case t of
-        I -> "t-i"
-        O -> "t-o"
-        T -> "t-t"
-        S -> "t-s"
-        J -> "t-j"
-        Z -> "t-z"
-        L -> "t-l"
-
 toString_t : Tetramino -> String
 toString_t t = 
     case t of
@@ -166,7 +162,6 @@ toString_r r =
         R3 -> "R3"
         R4 -> "R4"
         
-
 
 -- getBlocks : String -> String -> Rotations -> List Block
 getBlocks : Tetramino -> Rotation -> Rotations -> List Block
@@ -375,30 +370,30 @@ kickOffset t rPrev rAct test =
                         case dir of
                             "clockwise" -> 
                                 case rPrev of
-                                    R1 -> get test <| fromList [{x=-1, y=0}, {x=-1, y=1}, {x=0, y=-2}, {x=-1, y=-2}]
-                                    R2 -> get test <| fromList [{x=1, y=0}, {x=1, y=-1}, {x=0, y=2}, {x=1, y=2}] 
-                                    R3 -> get test <| fromList [{x=1, y=0}, {x=1, y=1}, {x=0, y=-2}, {x=1, y=-2}]
-                                    R4 -> get test <| fromList [{x=-1, y=0}, {x=-1, y=-1}, {x=0, y=2}, {x=-1, y=2}]
+                                    R1 -> get test <| fromList [{y=-1, x=0}, {y=-1, x=1}, {y=0, x=-1}, {y=-1, x=-1}]
+                                    R2 -> get test <| fromList [{y=1, x=0}, {y=1, x=-1}, {y=0, x=1}, {y=1, x=1}] 
+                                    R3 -> get test <| fromList [{y=1, x=0}, {y=1, x=1}, {y=0, x=-1}, {y=1, x=-1}]
+                                    R4 -> get test <| fromList [{y=-1, x=0}, {y=-1, x=-1}, {y=0, x=1}, {y=-1, x=1}]
                             _ -> 
                                 case rAct of
-                                    R1 -> get test <| fromList [{x=1, y=0}, {x=1, y=-1}, {x=0, y=2}, {x=1, y=2}]
-                                    R2 -> get test <| fromList [{x=-1, y=0}, {x=-1, y=1}, {x=0, y=-2}, {x=-1, y=-2}]
-                                    R3 -> get test <| fromList [{x=-1, y=0}, {x=-1, y=-1}, {x=0, y=2}, {x=-1, y=2}]
-                                    R4 -> get test <| fromList [{x=1, y=0}, {x=1, y=1}, {x=0, y=-2}, {x=1, y=-2}]
+                                    R1 -> get test <| fromList [{y=1, x=0}, {y=1, x=-1}, {y=0, x=1}, {y=1, x=1}]
+                                    R2 -> get test <| fromList [{y=-1, x=0}, {y=-1, x=1}, {y=0, x=-1}, {y=-1, x=-1}]
+                                    R3 -> get test <| fromList [{y=-1, x=0}, {y=-1, x=-1}, {y=0, x=1}, {y=-1, x=1}]
+                                    R4 -> get test <| fromList [{y=1, x=0}, {y=1, x=1}, {y=0, x=-1}, {y=1, x=-1}]
                     _ -> 
                         case dir of
                             "clockwise" -> 
                                 case rPrev of 
-                                    R1 -> get test <| fromList [{x=-2, y= 0}, {x=1, y= 0}, {x=-2, y=-1}, {x=1, y=2}]
-                                    R2 -> get test <| fromList [{x=-1, y= 0}, {x=2, y= 0}, {x=-1, y=2}, {x=2, y=-1}]
-                                    R3 -> get test <| fromList [{x=2, y= 0}, {x=-1, y= 0}, {x=2, y=1}, {x=-1, y=-2}]
-                                    R4 -> get test <| fromList [{x=1, y= 0}, {x=-2, y= 0}, {x=1, y=-2}, {x=-2, y=1}]
+                                    R1 -> get test <| fromList [{y=-1, x= 0}, {y=1, x= 0}, {y=-1, x=-1}, {y=1, x=1}]
+                                    R2 -> get test <| fromList [{y=-1, x= 0}, {y=1, x= 0}, {y=-1, x=1}, {y=1, x=-1}]
+                                    R3 -> get test <| fromList [{y=1, x= 0}, {y=-1, x= 0}, {y=1, x=1}, {y=-1, x=-1}]
+                                    R4 -> get test <| fromList [{y=1, x= 0}, {y=-1, x= 0}, {y=1, x=-1}, {y=-1, x=1}]
                             _ -> 
                                 case rAct of
-                                    R1 -> get test <| fromList [{x=2, y= 0}, {x=-1, y= 0}, {x=2, y=1}, {x=-1, y=-2}]
-                                    R2 -> get test <| fromList [{x=1, y= 0}, {x=-2, y= 0}, {x=1, y=-2}, {x=-2, y=1}]
-                                    R3 -> get test <| fromList [{x=-2, y= 0}, {x=1, y= 0}, {x=-2, y=-1}, {x=1, y=2}]
-                                    R4 -> get test <| fromList [{x=-1, y= 0}, {x=2, y= 0}, {x=-1, y=2}, {x=2, y=-1}]
+                                    R1 -> get test <| fromList [{y=1, x= 0}, {y=-1, x= 0}, {y=2, x=1}, {y=-1, x=-1}]
+                                    R2 -> get test <| fromList [{y=1, x= 0}, {y=-1, x= 0}, {y=1, x=-1}, {y=-1, x=1}]
+                                    R3 -> get test <| fromList [{y=-1, x= 0}, {y=1, x= 0}, {y=-2, x=-1}, {y=1, x=1}]
+                                    R4 -> get test <| fromList [{y=-1, x= 0}, {y=1, x= 0}, {y=-1, x=1}, {y=1, x=-1}]
     in 
         case block of
             Just b -> b

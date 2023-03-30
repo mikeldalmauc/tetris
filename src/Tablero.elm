@@ -7,15 +7,15 @@ import Array exposing (Array)
 import Array exposing (toList)
 import List
 import Debug exposing (toString)
-import Tetramino exposing (Tetramino, Piece, cssClass, Tile(..))
+import Tetramino exposing (Tetramino(..), Piece, Tile(..))
 import Array exposing (foldl)
 import Dict exposing (Dict)
 
 
 type alias Tablero = Matrix Tile
 
-initTablero : Tablero
-initTablero = Matrix.repeat 20 10 Empty
+initTablero : Int -> Int -> Tablero
+initTablero rows cols = Matrix.repeat rows cols Empty
 
 
 viewTablero : Tablero -> Maybe Piece -> Int -> Html msg
@@ -24,7 +24,7 @@ viewTablero tablero piece countdown =
         (x, y) = Matrix.size tablero
         renderedTablero = 
             case piece of 
-                Just p -> List.foldl (\block newTablero -> Matrix.set newTablero (block.x+p.origin.x) (block.y+p.origin.y) (Filled p.tetramino)) tablero p.blocks 
+                Just p -> insertPiece p tablero
                 Nothing -> tablero
     in
         Html.section 
@@ -33,6 +33,27 @@ viewTablero tablero piece countdown =
                   [viewCountdown countdown]
                 , List.map (\row -> viewRow (Matrix.getXs renderedTablero row) row) (List.range 0 (x - 1))
             ]
+
+
+insertPiece : Piece -> Tablero -> Tablero
+insertPiece piece tablero =
+    List.foldl (\block newTablero -> Matrix.set newTablero (block.x+piece.origin.x) (block.y+piece.origin.y) (Filled piece.tetramino)) tablero piece.blocks 
+
+
+testGrounded : Piece -> Tablero -> Piece
+testGrounded piece tablero = 
+    let 
+        piecesInContact = List.any 
+            (\b -> case Matrix.get tablero (b.x + piece.origin.x + 1) (b.y + piece.origin.y) of
+                        Just (Empty) ->  False
+                        Just (Filled _) -> True
+                        Nothing -> True
+            ) piece.blocks 
+    in
+        if piecesInContact then 
+            {piece | grounded = piece.grounded + 1}
+        else
+            {piece | grounded = 0}
 
 
 viewCountdown :  Int -> Html msg
@@ -63,3 +84,14 @@ viewTile tile rIndex =
                 [text <| toString rIndex]
 
 
+
+cssClass : Tetramino -> String
+cssClass t = 
+    case t of
+        I -> "t-i"
+        O -> "t-o"
+        T -> "t-t"
+        S -> "t-s"
+        J -> "t-j"
+        Z -> "t-z"
+        L -> "t-l"

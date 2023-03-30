@@ -7,17 +7,15 @@ import Html.Events exposing (onClick)
 import Keyboard.Event exposing (KeyboardEvent, decodeKeyboardEvent)
 import Keyboard.Key as Key
 
--- import Keyboard.Event.KeyCode exposing (Key(..))
 import Browser
 import Browser.Events exposing (onKeyDown)
 import Json.Decode as Json
-import Matrix exposing(Matrix, initialize, repeat, neighbours, set)
-import Time
 import Process
 import Task
-
-import Tablero exposing (Tablero, initTablero, viewTablero)
+import Random
+import Tablero exposing (Tablero, initTablero, viewTablero, insertPiece, testGrounded)
 import Tetramino exposing (..)
+import Time
 
 type alias Model =
 
@@ -29,6 +27,7 @@ type alias Model =
       , next : Maybe Piece
       , hold : Maybe Piece
       , rotations : Rotations
+      , stepTime : Float
     }
 
 
@@ -38,6 +37,7 @@ type Msg =
       HandleKeyboardEvent KeyboardEvent
     -- handle startup
     | Countdown Int
+    | NewPiece Tetramino
     | Advance
     | None
 
@@ -48,39 +48,76 @@ update msg model =
         Countdown n ->
             case n of
                 3 ->  ( { model | 
-                            tablero = initTablero
+                              tablero = initTablero 20 10
                             , points = 0
                             , state = (Starting n)} 
                     , (delay 1000 (Countdown (n - 1))))
 
-                0 -> ( { model | state = Playing, active = Just <| initPiece T model.rotations} , (delay 1000 Advance))
+                0 -> ( { model | state = Playing} , newPiece)
 
                 _ ->  ( { model | state = (Starting n)} , (delay 1000 (Countdown (n - 1))))
 
+        NewPiece t -> 
+             ({ model | state = Playing, active = Just <| initPiece t model.rotations}, Cmd.none)
+
         Advance ->
-            ({model | active = advancePiece model.active model.tablero },  (delay 1000 Advance))
+            case model.active of
+                Nothing -> (model, Cmd.none)
+                Just _ -> ({model | active = advancePiece model.active model.tablero}, Cmd.none)
 
         HandleKeyboardEvent event ->
-            let
-                newModel = { model | lastEvent = Just event }
-            in
-                if model.state == Playing then
-                    case event.keyCode of
-                        Key.Right ->  ({newModel | active = moveRight model.active model.tablero}, Cmd.none)
-                        Key.Left ->   ({newModel | active = moveLeft model.active model.tablero}, Cmd.none)
-                        Key.Up -> ({newModel | active = rotateRight model.active model.tablero model.rotations }, Cmd.none)
-                        Key.Down ->  ({newModel | active = advancePiece model.active model.tablero}, Cmd.none)
-                        Key.C -> (newModel, Cmd.none)
-                        Key.Z -> ({newModel | active = rotateLeft model.active model.tablero model.rotations}, Cmd.none)
-                        Key.Spacebar -> (newModel, Cmd.none)
-                        Key.Escape -> (newModel, Cmd.none)
-                        _ -> (newModel, Cmd.none)
-                else
-                    (newModel, Cmd.none)
+            if model.state == Playing then
+                case event.keyCode of
+                    Key.Right ->  
+                        let
+                            newModel = {model | active = moveRight model.active model.tablero}
+                        in
+                            groundPiece newModel
+                    Key.Left ->  
+                        let
+                            newModel = {model | active = moveLeft model.active model.tablero}
+                        in
+                            groundPiece newModel
 
+                    Key.Up -> 
+                        let
+                            newModel = {model | active = rotateRight model.active model.tablero model.rotations }
+                        in
+                            groundPiece newModel
+                    Key.Down ->  
+                        let
+                            newModel = {model | active = advancePiece model.active model.tablero}
+                        in
+                            groundPiece newModel
+                    Key.Z -> 
+                        let 
+                            newModel = {model | active = rotateLeft model.active model.tablero model.rotations}
+                        in
+                            groundPiece newModel
+                    Key.C -> (model, Cmd.none)
+                    Key.Spacebar -> (model, Cmd.none)
+                    Key.Escape -> (model, Cmd.none)
+                    _ -> (model, Cmd.none)
+            else
+                (model, Cmd.none)
 
         None -> (model, Cmd.none)
 
+
+newPiece : Cmd Msg
+newPiece =
+    Random.generate NewPiece pieceGenerator
+    
+  
+groundPiece : Model -> ( Model, Cmd Msg )
+groundPiece model = 
+    case model.active of
+        Just piece ->  
+            if piece.grounded < 3 then 
+               ({ model | active = Just (testGrounded piece model.tablero)}, Cmd.none)
+            else
+               ({ model | tablero = insertPiece piece model.tablero , active = Nothing}, newPiece)
+        Nothing -> (model, Cmd.none)
 
 
 delay : Float -> msg -> Cmd msg
@@ -106,8 +143,7 @@ view model =
         Html.main_
             [Attrs.id "tetris"]
             [ viewStartButton model.state
-            , viewTablero model.tablero model.active countdown 
-            , viewEvent model.lastEvent]
+            , viewTablero model.tablero model.active countdown]
 
 
 viewStartButton : GameState -> Html Msg
@@ -115,28 +151,6 @@ viewStartButton state =
     case state of
         NotStarted -> button [onClick <| Countdown 3] [ text "Start" ]
         _ -> button [ Attrs.disabled True] [ text "Start" ]
-
-
-        
-viewEvent : Maybe KeyboardEvent -> Html Msg
-viewEvent maybeEvent =
-    case maybeEvent of
-        Just event ->
-            pre []
-                [ text <|
-                    String.join ""
-                        [ "altKey: " ++ Debug.toString event.altKey
-                        , "ctrlKey: " ++ Debug.toString event.ctrlKey
-                        , "key: " ++ Debug.toString event.key
-                        , "keyCode: " ++ Debug.toString event.keyCode
-                        , "metaKey: " ++ Debug.toString event.metaKey
-                        , "repeat: " ++ Debug.toString event.repeat
-                        , "shiftKey: " ++ Debug.toString event.shiftKey
-                        ]
-                ]
-
-        Nothing ->
-            p [] [ text "No event yet" ]
 
 
 -- Subscribe to the `messageReceiver` port to hear about messages coming in
@@ -147,19 +161,20 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ onKeyDown (Json.map HandleKeyboardEvent decodeKeyboardEvent)
-        ]
+        , Time.every model.stepTime (\_ -> Advance)]
 
 
 init : ( Model, Cmd Msg )
 init =
     ( {   lastEvent = Nothing 
         , points = 0
-        , tablero = initTablero
+        , tablero = initTablero 20 10
         , state = NotStarted
         , active = Nothing
         , next = Nothing
         , hold = Nothing
         , rotations = rotations
+        , stepTime = 1000.0
       }
     , Cmd.none
     )
