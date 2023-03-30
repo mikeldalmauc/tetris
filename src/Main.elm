@@ -37,7 +37,7 @@ type alias Model =
     }
 
 
-type GameState = Paused | Starting Int | Playing | NotStarted
+type GameState = Paused | Starting Int | Playing | NotStarted | Finished
 
 type Msg =
       HandleKeyboardEvent KeyboardEvent
@@ -57,7 +57,11 @@ update msg model =
                               tablero = initTablero 20 10
                             , points = 0
                             , state = (Starting n)
-                            , holdAvailable = True} 
+                            , holdAvailable = True
+                            , active = Nothing
+                            , next = Nothing
+                            , hold = Nothing
+                             } 
                     , Cmd.batch [newPiece, (delay 1000 (Countdown (n - 1)))])
 
                 0 -> ( { model | state = Playing} , newPiece)
@@ -133,10 +137,17 @@ groundPiece model =
             else
                 let 
                     testedPiece = testGrounded piece model.tablero
+                    isEndGame = piece.origin.x == 0
                 in
                     if testedPiece.grounded == 0 
                     then  ({ model | active = Just {testedPiece | grounded = 2}}, Cmd.none)
-                    else  ( clearRows piece { model | tablero = insertPiece piece model.tablero , active = Nothing, holdAvailable = True}, newPiece)
+                    else  
+                        if isEndGame then
+                            ( { model | active = Nothing
+                            ,  tablero = insertPiece piece model.tablero
+                            , holdAvailable = False, state = Finished}, Cmd.none)
+                        else 
+                            ( clearRows piece { model | tablero = insertPiece piece model.tablero , active = Nothing, holdAvailable = True}, newPiece)
         Nothing -> (model, Cmd.none)
 
 
@@ -241,6 +252,7 @@ viewStartButton : GameState -> Html Msg
 viewStartButton state = 
     case state of
         NotStarted -> button [onClick <| Countdown 3] [ text "Start" ]
+        Finished -> button [onClick <| Countdown 3] [ text "Start" ]
         _ -> button [ Attrs.disabled True] [ text "Start" ]
 
 
