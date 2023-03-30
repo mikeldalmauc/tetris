@@ -26,7 +26,7 @@ type alias Model =
 
     {   points: Int
       , tablero: Tablero
-      , lastEvent : Maybe KeyboardEvent
+      , pausedState : GameState
       , state: GameState
       , active : Maybe Piece
       , next : Maybe Piece
@@ -45,6 +45,7 @@ type Msg =
     | Countdown Int
     | NewPiece Tetramino
     | Advance
+    | Pause Bool
     | None
 
 
@@ -69,13 +70,18 @@ update msg model =
                 _ ->  ( { model | state = (Starting n)} , (delay 1000 (Countdown (n - 1))))
 
         NewPiece t -> 
-             ({ model | state = Playing, active = model.next, next = Just <| initPiece t model.rotations}, Cmd.none)
-
+            case model.state of
+                Playing -> ({ model | state = Playing, active = model.next, next = Just <| initPiece t model.rotations}, Cmd.none)
+                Starting s -> ({ model | state = Starting s, active = model.next, next = Just <| initPiece t model.rotations}, Cmd.none)
+                _ -> (model, Cmd.none)
+                
         Advance ->
-            case model.active of
-                Nothing -> (model, Cmd.none)
-                Just _ -> groundPiece {model | active = advancePiece model.active model.tablero}
-
+            if model.state == Playing then
+                case model.active of
+                    Nothing -> (model, Cmd.none)
+                    Just _ -> groundPiece {model | active = advancePiece model.active model.tablero}
+            else
+                (model, Cmd.none)
         HandleKeyboardEvent event ->
             if model.state == Playing then
                 case event.keyCode of
@@ -91,12 +97,17 @@ update msg model =
                         groundPiece {model | active = rotateLeft model.active model.tablero model.rotations}
                     Key.C -> 
                         holdPiece model
-                                                    
+                    Key.Escape -> 
+                        ( {model | state = Paused, pausedState = model.state},  Cmd.none)     
                     Key.Spacebar -> (model, Cmd.none)
-                    Key.Escape -> (model, Cmd.none)
                     _ -> (model, Cmd.none)
             else
-                (model, Cmd.none)
+                case event.keyCode of
+                    Key.Escape -> ( {model | state = if model.state == Paused then Playing else model.state },  Cmd.none)
+                    _ -> (model, Cmd.none)
+
+        Pause paused -> ( {model | state = if paused then Paused else model.pausedState
+                                , pausedState = model.state}, Cmd.none)
 
         None -> (model, Cmd.none)
 
@@ -242,6 +253,7 @@ view model =
         Html.main_
             [Attrs.id "tetris"]
             [ viewStartButton model.state
+            , viewPauseButton model.state
             , viewContador model.points
             , viewTablero model.tablero model.active countdown "t-tablero"
             , viewTablero (initTablero 4 6) model.hold 0 "t-hold"
@@ -254,6 +266,13 @@ viewStartButton state =
         NotStarted -> button [onClick <| Countdown 3] [ text "Start" ]
         Finished -> button [onClick <| Countdown 3] [ text "Start" ]
         _ -> button [ Attrs.disabled True] [ text "Start" ]
+
+viewPauseButton : GameState -> Html Msg
+viewPauseButton state = 
+    case state of
+        Paused -> button [onClick <| Pause False] [ text "Resume" ]
+        Playing -> button [onClick <| Pause True] [ text "Pause" ]
+        _ ->  div [] []
 
 
 viewContador : Int -> Html msg
@@ -276,9 +295,9 @@ subscriptions model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( {   lastEvent = Nothing 
-        , points = 0
+    ( {   points = 0
         , tablero = initTablero 20 10
+        , pausedState = NotStarted
         , state = NotStarted
         , active = Nothing
         , next = Nothing
