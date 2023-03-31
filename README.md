@@ -2,6 +2,19 @@
 
 Tetris game in elm.
 
+<img src="assets/tetrisPreview.jpg" width="480" height="400">
+
+Also includes functionalities as :
+  - Basic wall kicking mechanism
+  - Shadow preview
+  
+Other rules :
+  - If a piece stays with no commands from user and touching floor for one it will be fixed to board
+  - If a piece has been touching floor withouth release for more than 3 actions it will be fixed.
+  - If a piece with 3 actions wile touching is released it will only have one action more while being grounded before fixing.
+  - Pieces spawn off the board
+
+
  # Compilar el código
 
  ```
