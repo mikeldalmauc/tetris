@@ -152,7 +152,7 @@ groundPiece model =
             else
                 let 
                     testedPiece = testGrounded piece model.tablero
-                    isEndGame = piece.origin.x == 0
+                    isEndGame = piece.origin.x <= 0
                 in
                     if testedPiece.grounded == 0 
                     then  ({ model | active = Just {testedPiece | grounded = 2}}, Cmd.none)
@@ -268,15 +268,15 @@ view model =
 viewStartButton : GameState -> Html Msg
 viewStartButton state = 
     case state of
-        NotStarted -> button [onClick <| Countdown 3] [ text "Start" ]
-        Finished -> button [onClick <| Countdown 3] [ text "Start" ]
-        _ -> button [ Attrs.disabled True] [ text "Start" ]
+        NotStarted -> button [onClick <| Countdown 3, Attrs.class "t-start"] [ text "Start" ]
+        Finished -> button [onClick <| Countdown 3, Attrs.class "t-start"] [ text "Start" ]
+        _ -> button [ Attrs.disabled True, Attrs.hidden True] [ text "Start" ]
 
 viewPauseButton : GameState -> Html Msg
 viewPauseButton state = 
     case state of
-        Paused -> button [onClick <| Pause False] [ text "Resume" ]
-        Playing -> button [onClick <| Pause True] [ text "Pause" ]
+        Paused -> button [onClick <| Pause False, Attrs.class "t-resume"] [ text "Resume" ]
+        Playing -> button [onClick <| Pause True, Attrs.class "t-pause"] [ text "Pause" ]
         _ ->  div [] []
 
 

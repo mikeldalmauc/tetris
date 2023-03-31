@@ -154,3 +154,19 @@
     align-items: center;
     justify-content: center;
 }
+
+.t-start, .t-resume {
+    height: 70px;
+    margin-top: 300px;
+    width: 180px;
+    margin-left: 296px;
+    z-index: 30;
+}
+
+.t-pause {
+    width: 80px;
+    height: 50px;
+    margin-left: 500px;
+    z-index: 30;
+    margin-top: 20px;
+}

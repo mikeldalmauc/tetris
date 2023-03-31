@@ -10,17 +10,22 @@ import Random
 
 type Tile = Empty | Filled Tetramino | Shadow Tetramino
 
+
 type Tetramino = I | O | T | S | J | Z | L 
 
+
 type Rotation = R1 | R2 | R3 | R4
+
 
 type alias Block =
     { x : Int
     , y : Int
     }
     
+
 type alias Rotations =
     Dict String (Dict String (List Block))
+
 
 type alias Piece =
     { tetramino : Tetramino
@@ -29,6 +34,7 @@ type alias Piece =
     , r : Rotation
     , grounded : Int
     }
+
 
 initPiece : Tetramino -> Rotations -> Piece 
 initPiece t rts =
@@ -43,6 +49,7 @@ initPiece t rts =
 pieceGenerator : Random.Generator Tetramino
 pieceGenerator =
   Random.uniform I [O,T, S, J, Z, L ]
+
 
 advancePiece : Maybe Piece -> Matrix Tile -> Maybe Piece 
 advancePiece p tablero =
@@ -63,6 +70,7 @@ moveLeft p tablero =
         if (testMovement newPiece tablero) then newPiece else piece
       ) p
 
+
 moveRight : Maybe Piece -> Matrix Tile  -> Maybe Piece 
 moveRight p tablero =
   Maybe.map (\piece ->
@@ -71,6 +79,7 @@ moveRight p tablero =
       in
         if (testMovement newPiece tablero) then newPiece else piece
     ) p
+
 
 rotateRight : Maybe Piece -> Matrix Tile -> Rotations -> Maybe Piece
 rotateRight piece tablero rts = 
@@ -114,15 +123,18 @@ testMovement piece tablero =
     else
       False
 
+
 testOutsideBounds : Piece -> Matrix Tile -> Bool
 testOutsideBounds piece tablero =
   let
     ( x, y ) = Matrix.size tablero 
     blocks = addOriginOffset piece 
-    testBlock = \block -> not ( block.x < 0 || block.y < 0 || block.x > x || block.y > y)
+    testBlock = \block -> not ( block.y < 0 || block.x >= x || block.y >= y )
+
     reduceFun = \block prev-> prev && (testBlock block)
   in
     foldl reduceFun True blocks
+
 
 testOverlapp : Piece -> Matrix Tile -> Bool
 testOverlapp piece tablero =
@@ -131,10 +143,11 @@ testOverlapp piece tablero =
         True 
         <| addOriginOffset piece  
 
+
 noOverlap : Matrix Tile -> Block -> Bool
-noOverlap tablero {x, y} = 
+noOverlap tablero {x, y} =
     case (Matrix.get tablero x y) of
-        Nothing -> False
+        Nothing -> True
         Just tile -> case tile of
             Filled _ -> False
             _ -> True
@@ -209,8 +222,6 @@ rotations =
         ]
     
 
-
-
 rotationsI : Dict String (List Block)
 rotationsI =
      Dict.fromList 
@@ -233,6 +244,8 @@ rotationsI =
                 , { x = 1, y = 2 }
                 , { x = 1, y = 3 }])
         ]
+
+
 rotationsJ : Dict String (List Block)
 rotationsJ =
      Dict.fromList 
@@ -276,6 +289,7 @@ rotationsL =
                 , { x = 1, y = 2 }])
         ]
 
+
 rotationsO : Dict String (List Block)
 rotationsO =
      Dict.fromList 
@@ -296,6 +310,7 @@ rotationsO =
                 , { x = 2, y = 1 }
                 , { x = 2, y = 2 }])
         ]
+
 
 rotationsS : Dict String (List Block)
 rotationsS =
@@ -318,6 +333,7 @@ rotationsS =
                 , { x = 1, y = 0 }])
         ]
 
+
 rotationsZ : Dict String (List Block)
 rotationsZ =
      Dict.fromList 
@@ -338,6 +354,7 @@ rotationsZ =
                 , { x = 1, y = 1 }
                 , { x = 1, y = 2 }])
         ]
+
 
 rotationsT : Dict String (List Block)
 rotationsT =
@@ -429,3 +446,4 @@ rotationDirection  rPrev rAct  =
         ( R3, R2 ) -> "counterclockwise"
         ( R2, R1 ) -> "counterclockwise"
         _ -> ""
+
