@@ -13,7 +13,7 @@ import Json.Decode as Json
 import Process
 import Task
 import Random
-import Tablero exposing (Tablero, initTablero, viewTablero, insertPiece, testGrounded)
+import Tablero exposing (Tablero, initTablero, viewTablero, insertPiece, testGrounded, shadowPosition)
 import Tetramino exposing (..)
 import Time
 import Matrix
@@ -99,8 +99,15 @@ update msg model =
                         holdPiece model
                     Key.Escape -> 
                         ( {model | state = Paused, pausedState = model.state},  Cmd.none)     
-                    Key.Spacebar -> (model, Cmd.none)
-                    _ -> (model, Cmd.none)
+                    Key.Spacebar -> 
+                        case model.active of 
+                                Just piece -> 
+                                    case (shadowPosition piece model.tablero) of 
+                                        Just shadow -> groundPiece { model | active = Just { piece | origin = shadow.origin, grounded = 3} } 
+                                        Nothing -> (model, Cmd.none) 
+                                Nothing -> (model, Cmd.none) 
+                    _ ->  (model, Cmd.none)           
+                            
             else
                 case event.keyCode of
                     Key.Escape -> ( {model | state = if model.state == Paused then Playing else model.state },  Cmd.none)
