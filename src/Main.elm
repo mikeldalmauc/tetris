@@ -1,7 +1,7 @@
 module Main exposing (main, Model, GameState)
 
-import Html exposing (Html, div, h1, h3, p, pre, text, button)
-import Html.Attributes as Attrs exposing (style)
+import Html exposing (Html, div, p, text, button)
+import Html.Attributes as Attrs 
 import Html.Events exposing (onClick)
 import Set exposing (empty, insert, member)
 import Keyboard.Event exposing (KeyboardEvent, decodeKeyboardEvent)
@@ -13,13 +13,11 @@ import Json.Decode as Json
 import Process
 import Task
 import Random
-import Tablero exposing (Tablero, initTablero, viewTablero, insertPiece, testGrounded, shadowPosition, sinkPiece)
+import Tablero exposing (Tablero, initTablero, viewTablero, insertPiece, testGrounded, sinkPiece)
 import Tetramino exposing (..)
 import Time
 import Matrix
-import Array 
 import Array exposing (length)
-import Svg.Attributes exposing (origin)
 
 
 type alias Model =
