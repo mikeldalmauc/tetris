@@ -34,7 +34,7 @@ initPiece : Tetramino -> Rotations -> Piece
 initPiece t rts =
         { tetramino = t
         , blocks  = getBlocks t R4 rts 
-        , origin = { x = 0, y = 3}
+        , origin = { x = -1, y = 3}
         , r  = R4
         , grounded = 0
     }
@@ -138,6 +138,21 @@ noOverlap tablero {x, y} =
         Just tile -> case tile of
             Filled _ -> False
             _ -> True
+
+
+duplicados : List Block -> List Block -> Bool
+duplicados lista1 lista2 =
+    let
+        bloques = List.append lista1 lista2
+        sinDuplicados = List.foldl (\bloque bloquesSinDuplicados->
+            if List.member bloque bloquesSinDuplicados then
+                bloquesSinDuplicados
+            else
+                bloque :: bloquesSinDuplicados)
+         [] bloques
+
+    in
+    List.length bloques /= List.length sinDuplicados
 
 
 addOriginOffset : Piece -> List Block

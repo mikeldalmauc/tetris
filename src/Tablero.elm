@@ -6,7 +6,7 @@ import Html.Attributes as Attrs exposing (style)
 import Array exposing (toList, Array)
 import List
 import Debug exposing (toString)
-import Tetramino exposing (Tetramino(..), Piece, Tile(..))
+import Tetramino exposing (Tetramino(..), Piece, Tile(..), duplicados)
 import Dict
 import Svg.Attributes exposing (origin)
 
@@ -27,8 +27,8 @@ viewTablero tablero piece countdown class =
                     "t-tablero" -> insertPiece p tablero
                     _ -> insertPiece {p | blocks =  
                             case p.tetramino of
-                                O -> List.map (\b -> {x = b.x , y= b.y - 3}) p.blocks
-                                _ -> List.map (\b -> {x = b.x + 1, y= b.y - 2}) p.blocks} tablero
+                                O -> List.map (\b -> {x = b.x + 1 , y= b.y - 3}) p.blocks
+                                _ -> List.map (\b -> {x = b.x + 2, y= b.y - 2}) p.blocks} tablero
                 Nothing -> tablero
         
         tableroWithShadow = if not ("t-tablero" == class) then tableroWithActive
@@ -60,8 +60,18 @@ insertPiece piece tablero =
 
 insertShadow : Piece -> Tablero -> Tablero
 insertShadow piece tablero =
-    List.foldl (\block newTablero -> Matrix.set newTablero (block.x+piece.origin.x) (block.y+piece.origin.y) (Shadow piece.tetramino)) tablero piece.blocks 
-
+    List.foldl 
+        (\block newTablero -> 
+            let
+                x = block.x + piece.origin.x
+                y =  block.y + piece.origin.y
+            in
+                case Matrix.get tablero x y of
+                    Nothing -> newTablero
+                    Just Empty -> Matrix.set newTablero x y (Shadow piece.tetramino)
+                    Just _ -> newTablero
+        ) tablero piece.blocks 
+    
 
 -- Para cada bloque, mediamos la distancia con el 
 -- primer bloque inmediatamente debajo. La distancia mínima entre
@@ -97,12 +107,22 @@ shadowPosition piece tablero =
                 case d of
                     Just deltaV -> Just { piece | origin = { x = piece.origin.x + deltaV, y = piece.origin.y}}
                     Nothing -> Nothing
+
         in
             piece.blocks 
                 |> List.map medirAltura
                 |> calcularDeltas
                 |> List.minimum
                 |> sumarDeltas 
+
+sinkPiece : Maybe Piece -> Tablero -> Maybe Piece
+sinkPiece piece tablero =
+    case piece of 
+        Just p -> 
+            case (shadowPosition p tablero) of 
+                Just shadow -> Just { p | origin = shadow.origin, grounded = 3 } 
+                Nothing -> Just p
+        Nothing -> Nothing
 
 testGrounded : Piece -> Tablero -> Piece
 testGrounded piece tablero = 

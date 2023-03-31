@@ -13,7 +13,7 @@ import Json.Decode as Json
 import Process
 import Task
 import Random
-import Tablero exposing (Tablero, initTablero, viewTablero, insertPiece, testGrounded, shadowPosition)
+import Tablero exposing (Tablero, initTablero, viewTablero, insertPiece, testGrounded, shadowPosition, sinkPiece)
 import Tetramino exposing (..)
 import Time
 import Matrix
@@ -95,18 +95,15 @@ update msg model =
                         groundPiece {model | active = advancePiece model.active model.tablero}
                     Key.Z -> 
                         groundPiece {model | active = rotateLeft model.active model.tablero model.rotations}
+                    Key.Spacebar -> 
+                        groundPiece {model | active = sinkPiece model.active model.tablero}
                     Key.C -> 
                         holdPiece model
                     Key.Escape -> 
                         ( {model | state = Paused, pausedState = model.state},  Cmd.none)     
-                    Key.Spacebar -> 
-                        case model.active of 
-                                Just piece -> 
-                                    case (shadowPosition piece model.tablero) of 
-                                        Just shadow -> groundPiece { model | active = Just { piece | origin = shadow.origin, grounded = 3} } 
-                                        Nothing -> (model, Cmd.none) 
-                                Nothing -> (model, Cmd.none) 
-                    _ ->  (model, Cmd.none)           
+
+                            
+                    _ -> (model, Cmd.none)
                             
             else
                 case event.keyCode of
