@@ -6,49 +6,34 @@ import Html.Attributes as Attrs
 import Array exposing (toList, Array)
 import List
 import Debug exposing (toString)
-import Tetramino exposing (Tetramino(..), Piece, Tile(..))
+import Tetramino exposing (Tetramino(..), Rotation(..), Rotations, kickOffset, Block, getBlocks)
+
+
+type Tile = Empty | Filled Tetramino | Shadow Tetramino
 
 
 type alias Tablero = Matrix Tile
 
+type alias Piece =
+    { tetramino : Tetramino
+    , blocks : List Block
+    , origin : Block
+    , r : Rotation
+    , grounded : Int
+    }
+
+
+initPiece : Tetramino -> Rotations -> Piece 
+initPiece t rts =
+        { tetramino = t
+        , blocks  = getBlocks t R4 rts 
+        , origin = { x = -1, y = 3}
+        , r  = R4
+        , grounded = 0
+    }
+
 initTablero : Int -> Int -> Tablero
 initTablero rows cols = Matrix.repeat rows cols Empty
-
-
-viewTablero : Tablero -> Maybe Piece -> Int -> String -> Html msg
-viewTablero tablero piece countdown class = 
-    let
-        (x, y) = Matrix.size tablero
-        tableroWithActive = 
-            case piece of 
-                Just p -> case class of 
-                    "t-tablero" -> insertPiece p tablero
-                    _ -> insertPiece {p | blocks =  
-                            case p.tetramino of
-                                O -> List.map (\b -> {x = b.x + 1 , y= b.y - 3}) p.blocks
-                                _ -> List.map (\b -> {x = b.x + 2, y= b.y - 2}) p.blocks} tablero
-                Nothing -> tablero
-        
-        tableroWithShadow = if not ("t-tablero" == class) then tableroWithActive
-            else
-                case piece of
-                    Just p -> 
-                        let
-                            shadow = shadowPosition p tablero
-                        in    
-                            case shadow of
-                                Nothing -> tableroWithActive
-                                Just s -> insertShadow s tableroWithActive
-                    Nothing -> tableroWithActive
-
-        
-    in
-        Html.section 
-            [Attrs.class class]
-            <| List.concat [
-                  [viewCountdown countdown]
-                , List.map (\row -> viewRow (Matrix.getXs tableroWithShadow row) row) (List.range 0 (x - 1))
-            ]
 
 
 insertPiece : Piece -> Tablero -> Tablero
@@ -122,6 +107,114 @@ sinkPiece piece tablero =
                 Nothing -> Just p
         Nothing -> Nothing
 
+
+advancePiece : Maybe Piece -> Matrix Tile -> Maybe Piece 
+advancePiece p tablero =
+    Maybe.map (\piece -> 
+      let
+        newPiece = {piece | origin = {x = piece.origin.x + 1, y = piece.origin.y}}
+      in
+        if (testMovement newPiece tablero) then newPiece else piece
+      ) p
+
+
+moveLeft : Maybe Piece -> Matrix Tile -> Maybe Piece 
+moveLeft p tablero =
+  Maybe.map (\piece ->
+      let
+        newPiece = {piece | origin = {x = piece.origin.x, y = piece.origin.y - 1}}
+      in
+        if (testMovement newPiece tablero) then newPiece else piece
+      ) p
+
+
+moveRight : Maybe Piece -> Matrix Tile  -> Maybe Piece 
+moveRight p tablero =
+  Maybe.map (\piece ->
+      let
+        newPiece = {piece | origin = {x = piece.origin.x, y = piece.origin.y + 1}}
+      in
+        if (testMovement newPiece tablero) then newPiece else piece
+    ) p
+
+
+rotateRight : Maybe Piece -> Matrix Tile -> Rotations -> Maybe Piece
+rotateRight piece tablero rts = 
+    Maybe.map (\p -> 
+            let 
+              newPiece = case p.r of
+                          R1 -> rotate rts R2 p
+                          R2 -> rotate rts R3 p
+                          R3 -> rotate rts R4 p
+                          R4 -> rotate rts R1 p
+           in
+            if (testMovement newPiece tablero) then newPiece
+            else Maybe.withDefault p (attemptKick p.r newPiece tablero)
+      ) piece
+      
+
+rotateLeft : Maybe Piece -> Matrix Tile -> Rotations -> Maybe Piece
+rotateLeft piece tablero rts = 
+    Maybe.map (\p -> 
+            let 
+              newPiece = case p.r of
+                R1 ->  rotate rts R4 p
+                R2 ->  rotate rts R1 p
+                R3 ->  rotate rts R2 p
+                R4 ->  rotate rts R3 p
+            in
+              if (testMovement newPiece tablero) then newPiece 
+              else Maybe.withDefault p (attemptKick p.r newPiece tablero)
+           ) piece
+        
+
+rotate : Rotations -> Rotation -> Piece -> Piece
+rotate rts r p = 
+    {p | blocks = (getBlocks p.tetramino r rts), r = r}
+
+
+addOriginOffset : Piece -> List Block
+addOriginOffset piece =
+    List.map (\b -> {x = b.x + piece.origin.x, y = b.y + piece.origin.y}) piece.blocks
+
+
+
+testMovement : Piece -> Matrix Tile -> Bool
+testMovement piece tablero =
+    if (testOutsideBounds piece tablero ) then
+      testOverlapp piece tablero
+    else
+      False
+
+
+testOutsideBounds : Piece -> Matrix Tile -> Bool
+testOutsideBounds piece tablero =
+  let
+    ( x, y ) = Matrix.size tablero 
+    blocks = addOriginOffset piece 
+    testBlock = \block -> not ( block.y < 0 || block.x >= x || block.y >= y )
+
+    reduceFun = \block prev-> prev && (testBlock block)
+  in
+    List.foldl reduceFun True blocks
+
+
+testOverlapp : Piece -> Matrix Tile -> Bool
+testOverlapp piece tablero =
+    List.foldl 
+        (\block prev -> prev && (noOverlap tablero block))
+        True 
+        <| addOriginOffset piece  
+
+
+noOverlap : Matrix Tile -> Block -> Bool
+noOverlap tablero {x, y} =
+    case (Matrix.get tablero x y) of
+        Nothing -> True
+        Just tile -> case tile of
+            Filled _ -> False
+            _ -> True
+
 testGrounded : Piece -> Tablero -> Piece
 testGrounded piece tablero = 
     let 
@@ -136,6 +229,64 @@ testGrounded piece tablero =
             {piece | grounded = piece.grounded + 1}
         else
             {piece | grounded = 0}
+
+
+attemptKick : Rotation -> Piece -> Matrix Tile -> Maybe Piece
+attemptKick rPrev piece tablero = 
+    let
+        reduceFunTests = \test prev -> 
+            case prev of
+                Just p -> Just p
+                Nothing -> 
+                    let 
+                        kick = kickOffset piece.tetramino rPrev piece.r test
+                        newPiece = { piece | origin = { x = kick.x + piece.origin.x, y = kick.y + piece.origin.y}}
+                    in
+                        if (testMovement newPiece tablero) then Just newPiece else Nothing
+    in
+        List.foldl reduceFunTests Nothing [0, 1, 2, 3]
+        -- if (testMovement newPiece tablero) then newPiece else p 
+--
+--
+--  View Section 
+-- 
+-- 
+-- ___________________________________________________________________________________________________
+
+viewTablero : Tablero -> Maybe Piece -> Int -> String -> Html msg
+viewTablero tablero piece countdown class = 
+    let
+        (x, y) = Matrix.size tablero
+        tableroWithActive = 
+            case piece of 
+                Just p -> case class of 
+                    "t-tablero" -> insertPiece p tablero
+                    _ -> insertPiece {p | blocks =  
+                            case p.tetramino of
+                                O -> List.map (\b -> {x = b.x + 1 , y= b.y - 3}) p.blocks
+                                _ -> List.map (\b -> {x = b.x + 2, y= b.y - 2}) p.blocks} tablero
+                Nothing -> tablero
+        
+        tableroWithShadow = if not ("t-tablero" == class) then tableroWithActive
+            else
+                case piece of
+                    Just p -> 
+                        let
+                            shadow = shadowPosition p tablero
+                        in    
+                            case shadow of
+                                Nothing -> tableroWithActive
+                                Just s -> insertShadow s tableroWithActive
+                    Nothing -> tableroWithActive
+
+        
+    in
+        Html.section 
+            [Attrs.class class]
+            <| List.concat [
+                  [viewCountdown countdown]
+                , List.map (\row -> viewRow (Matrix.getXs tableroWithShadow row) row) (List.range 0 (x - 1))
+            ]
 
 
 viewCountdown :  Int -> Html msg

@@ -2,14 +2,8 @@ module Tetramino exposing (..)
 
 import Dict exposing (Dict)
 
-import Matrix exposing(Matrix)
-import Svg.Attributes exposing (origin)
-import List exposing (foldl)
 import Array exposing (fromList, get)
 import Random
-
-type Tile = Empty | Filled Tetramino | Shadow Tetramino
-
 
 type Tetramino = I | O | T | S | J | Z | L 
 
@@ -27,130 +21,9 @@ type alias Rotations =
     Dict String (Dict String (List Block))
 
 
-type alias Piece =
-    { tetramino : Tetramino
-    , blocks : List Block
-    , origin : Block
-    , r : Rotation
-    , grounded : Int
-    }
-
-
-initPiece : Tetramino -> Rotations -> Piece 
-initPiece t rts =
-        { tetramino = t
-        , blocks  = getBlocks t R4 rts 
-        , origin = { x = -1, y = 3}
-        , r  = R4
-        , grounded = 0
-    }
-
-
-pieceGenerator : Random.Generator Tetramino
-pieceGenerator =
+tetraminoGenerator : Random.Generator Tetramino
+tetraminoGenerator =
   Random.uniform I [O,T, S, J, Z, L ]
-
-
-advancePiece : Maybe Piece -> Matrix Tile -> Maybe Piece 
-advancePiece p tablero =
-    Maybe.map (\piece -> 
-      let
-        newPiece = {piece | origin = {x = piece.origin.x + 1, y = piece.origin.y}}
-      in
-        if (testMovement newPiece tablero) then newPiece else piece
-      ) p
-
-
-moveLeft : Maybe Piece -> Matrix Tile -> Maybe Piece 
-moveLeft p tablero =
-  Maybe.map (\piece ->
-      let
-        newPiece = {piece | origin = {x = piece.origin.x, y = piece.origin.y - 1}}
-      in
-        if (testMovement newPiece tablero) then newPiece else piece
-      ) p
-
-
-moveRight : Maybe Piece -> Matrix Tile  -> Maybe Piece 
-moveRight p tablero =
-  Maybe.map (\piece ->
-      let
-        newPiece = {piece | origin = {x = piece.origin.x, y = piece.origin.y + 1}}
-      in
-        if (testMovement newPiece tablero) then newPiece else piece
-    ) p
-
-
-rotateRight : Maybe Piece -> Matrix Tile -> Rotations -> Maybe Piece
-rotateRight piece tablero rts = 
-    Maybe.map (\p -> 
-            let 
-              newPiece = case p.r of
-                          R1 -> rotate rts R2 p
-                          R2 -> rotate rts R3 p
-                          R3 -> rotate rts R4 p
-                          R4 -> rotate rts R1 p
-           in
-            if (testMovement newPiece tablero) then newPiece
-            else Maybe.withDefault p (attemptKick p.r newPiece tablero)
-      ) piece
-      
-
-rotateLeft : Maybe Piece -> Matrix Tile -> Rotations -> Maybe Piece
-rotateLeft piece tablero rts = 
-    Maybe.map (\p -> 
-            let 
-              newPiece = case p.r of
-                R1 ->  rotate rts R4 p
-                R2 ->  rotate rts R1 p
-                R3 ->  rotate rts R2 p
-                R4 ->  rotate rts R3 p
-            in
-              if (testMovement newPiece tablero) then newPiece 
-              else Maybe.withDefault p (attemptKick p.r newPiece tablero)
-           ) piece
-        
-
-rotate : Rotations -> Rotation -> Piece -> Piece
-rotate rts r p = 
-    {p | blocks = (getBlocks p.tetramino r rts), r = r}
-
-
-testMovement : Piece -> Matrix Tile -> Bool
-testMovement piece tablero =
-    if (testOutsideBounds piece tablero ) then
-      testOverlapp piece tablero
-    else
-      False
-
-
-testOutsideBounds : Piece -> Matrix Tile -> Bool
-testOutsideBounds piece tablero =
-  let
-    ( x, y ) = Matrix.size tablero 
-    blocks = addOriginOffset piece 
-    testBlock = \block -> not ( block.y < 0 || block.x >= x || block.y >= y )
-
-    reduceFun = \block prev-> prev && (testBlock block)
-  in
-    foldl reduceFun True blocks
-
-
-testOverlapp : Piece -> Matrix Tile -> Bool
-testOverlapp piece tablero =
-    foldl 
-        (\block prev -> prev && (noOverlap tablero block))
-        True 
-        <| addOriginOffset piece  
-
-
-noOverlap : Matrix Tile -> Block -> Bool
-noOverlap tablero {x, y} =
-    case (Matrix.get tablero x y) of
-        Nothing -> True
-        Just tile -> case tile of
-            Filled _ -> False
-            _ -> True
 
 
 duplicados : List Block -> List Block -> Bool
@@ -168,9 +41,6 @@ duplicados lista1 lista2 =
     List.length bloques /= List.length sinDuplicados
 
 
-addOriginOffset : Piece -> List Block
-addOriginOffset piece =
-    List.map (\b -> {x = b.x + piece.origin.x, y = b.y + piece.origin.y}) piece.blocks
 
 
 toString_t : Tetramino -> String
@@ -377,22 +247,6 @@ rotationsT =
                 , { x = 0, y = 1 }])
         ]
 
-
-attemptKick : Rotation -> Piece -> Matrix Tile -> Maybe Piece
-attemptKick rPrev piece tablero = 
-    let
-        reduceFunTests = \test prev -> 
-            case prev of
-                Just p -> Just p
-                Nothing -> 
-                    let 
-                        kick = kickOffset piece.tetramino rPrev piece.r test
-                        newPiece = { piece | origin = { x = kick.x + piece.origin.x, y = kick.y + piece.origin.y}}
-                    in
-                        if (testMovement newPiece tablero) then Just newPiece else Nothing
-    in
-        foldl reduceFunTests Nothing [0, 1, 2, 3]
-        -- if (testMovement newPiece tablero) then newPiece else p 
 
 
 kickOffset : Tetramino -> Rotation -> Rotation -> Int -> Block

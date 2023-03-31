@@ -13,8 +13,8 @@ import Json.Decode as Json
 import Process
 import Task
 import Random
-import Tablero exposing (Tablero, initTablero, viewTablero, insertPiece, testGrounded, sinkPiece)
-import Tetramino exposing (..)
+import Tablero exposing (..)
+import Tetramino exposing (Tetramino(..), Rotations, tetraminoGenerator, rotations)
 import Time
 import Matrix
 import Array exposing (length)
@@ -149,7 +149,7 @@ holdPiece model =
 
 newPiece : Cmd Msg
 newPiece =
-    Random.generate NewPiece pieceGenerator
+    Random.generate NewPiece tetraminoGenerator
     
   
 groundPiece : Model -> ( Model, Cmd Msg )
