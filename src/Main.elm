@@ -18,7 +18,7 @@ import Tetramino exposing (Tetramino(..), Rotations, tetraminoGenerator, rotatio
 import Time
 import Matrix
 import Array exposing (length)
-
+import Dict exposing (Dict)
 
 type alias Model =
 
@@ -120,6 +120,20 @@ update msg modl =
             None -> (model, Cmd.none)
 
 
+pointsTable : Dict String Int
+pointsTable = 
+    Dict.fromList [
+         ("1" , 40)
+        ,("2" , 100)
+        ,("3" , 300)
+        ,("4" , 1200)
+    ]
+
+mapPoints : String -> Int
+mapPoints i = case Dict.get i pointsTable of
+    Just p -> p
+    Nothing -> 0
+             
 issueMsgAsCmd : Msg -> Cmd Msg
 issueMsgAsCmd msg =
     Task.perform identity (Task.succeed msg)
@@ -221,15 +235,9 @@ clearRows piece model =
                     |> clear model.tablero
                     |> pushFilled
 
-        mapPoints = \rows -> case rows of 
-            1 -> 40
-            2 -> 100
-            3 -> 300
-            4 -> 1200
-            _ -> 0
     in
         { model | tablero = newTablero
-            , points = model.points + (mapPoints  amount)
+            , points = model.points + (mapPoints  <| toString amount)
         }
 
 
@@ -316,7 +324,14 @@ viewControls =
             , Html.li [] [ Html.b [] [text "Esc"], text " Pause / Restart" ]
             , Html.li [] [ Html.b [] [text "Enter"], text " Start" ]
             ]
+        , Html.h4 [] [text "Puntos"] 
+        , Html.ul []
+             (List.append [Html.li [] [Html.b [] [text "Rows - Points"]]] 
+                <| Dict.values
+                <| Dict.map ( \key value -> Html.li [] [ Html.b [] [text key],text " - ", text (toString value) ] ) pointsTable)
+            
         ]
+        
 
 -- Subscribe to the `messageReceiver` port to hear about messages coming in
 -- from JS. Check out the index.html file to see how this is hooked up to a

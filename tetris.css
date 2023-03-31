@@ -183,10 +183,17 @@
     font-family: monospace;
     flex-direction: column;
     justify-content: flex-start;
-    align-items: center;
+    
+
+    text-align: left;
 }
 
 .t-controls ul{
+    padding-inline-start: 40px;
+    list-style: none;
+}
+
+.t-controls li{
     list-style: none;
 }
 
@@ -197,4 +204,5 @@
     margin-inline-start: 0px;
     margin-inline-end: 0px;
     font-weight: bold;
+    padding-inline-start: 40px;
 }
