@@ -34,6 +34,8 @@ type alias Model =
       , rotations : Rotations
       , stepTime : Float
       , holdAvailable : Bool
+      , previousMsg : Msg
+      , actualMsg : Msg
     }
 
 
@@ -50,70 +52,79 @@ type Msg =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        Countdown n ->
-            case n of
-                3 ->  ( { model | 
-                              tablero = initTablero 20 10
-                            , points = 0
-                            , state = (Starting n)
-                            , holdAvailable = True
-                            , active = Nothing
-                            , next = Nothing
-                            , hold = Nothing
-                             } 
-                    , Cmd.batch [newPiece, (delay 1000 (Countdown (n - 1)))])
+update msg modl =
+    let
+        model = { modl | previousMsg = modl.previousMsg, actualMsg = msg }
+    in
+        case msg of
+            Countdown n ->
+                case n of
+                    3 ->  ( { model | 
+                                tablero = initTablero 20 10
+                                , points = 0
+                                , state = (Starting n)
+                                , holdAvailable = True
+                                , active = Nothing
+                                , next = Nothing
+                                , hold = Nothing
+                                } 
+                        , Cmd.batch [newPiece, (delay 1000 (Countdown (n - 1)))])
 
-                0 -> ( { model | state = Playing} , newPiece)
+                    0 -> ( { model | state = Playing} , newPiece)
 
-                _ ->  ( { model | state = (Starting n)} , (delay 1000 (Countdown (n - 1))))
+                    _ ->  ( { model | state = (Starting n)} , (delay 1000 (Countdown (n - 1))))
 
-        NewPiece t -> 
-            case model.state of
-                Playing -> ({ model | state = Playing, active = model.next, next = Just <| initPiece t model.rotations}, Cmd.none)
-                Starting s -> ({ model | state = Starting s, active = model.next, next = Just <| initPiece t model.rotations}, Cmd.none)
-                _ -> (model, Cmd.none)
-                
-        Advance ->
-            if model.state == Playing then
-                case model.active of
-                    Nothing -> (model, Cmd.none)
-                    Just _ -> groundPiece {model | active = advancePiece model.active model.tablero}
-            else
-                (model, Cmd.none)
-        HandleKeyboardEvent event ->
-            if model.state == Playing then
-                case event.keyCode of
-                    Key.Right ->  
-                        groundPiece {model | active = moveRight model.active model.tablero}
-                    Key.Left ->  
-                        groundPiece {model | active = moveLeft model.active model.tablero}
-                    Key.Up -> 
-                        groundPiece {model | active = rotateRight model.active model.tablero model.rotations }
-                    Key.Down ->  
-                        groundPiece {model | active = advancePiece model.active model.tablero}
-                    Key.Z -> 
-                        groundPiece {model | active = rotateLeft model.active model.tablero model.rotations}
-                    Key.Spacebar -> 
-                        groundPiece {model | active = sinkPiece model.active model.tablero}
-                    Key.C -> 
-                        holdPiece model
-                    Key.Escape -> 
-                        ( {model | state = Paused, pausedState = model.state},  Cmd.none)     
-
-                            
+            NewPiece t -> 
+                case model.state of
+                    Playing -> ({ model | state = Playing, active = model.next, next = Just <| initPiece t model.rotations}, Cmd.none)
+                    Starting s -> ({ model | state = Starting s, active = model.next, next = Just <| initPiece t model.rotations}, Cmd.none)
                     _ -> (model, Cmd.none)
-                            
-            else
-                case event.keyCode of
-                    Key.Escape -> ( {model | state = if model.state == Paused then Playing else model.state },  Cmd.none)
-                    _ -> (model, Cmd.none)
+                    
+            Advance ->
+                if model.state == Playing then
+                    case model.active of
+                        Nothing -> (model, Cmd.none)
+                        Just _ -> groundPiece {model | active = advancePiece model.active model.tablero}
+                else
+                    (model, Cmd.none)
+            HandleKeyboardEvent event ->
+                if model.state == Playing then
+                    case event.keyCode of
+                        Key.Right ->  
+                            groundPiece {model | active = moveRight model.active model.tablero}
+                        Key.Left ->  
+                            groundPiece {model | active = moveLeft model.active model.tablero}
+                        Key.Up -> 
+                            groundPiece {model | active = rotateRight model.active model.tablero model.rotations }
+                        Key.Down ->  
+                            groundPiece {model | active = advancePiece model.active model.tablero}
+                        Key.Z -> 
+                            groundPiece {model | active = rotateLeft model.active model.tablero model.rotations}
+                        Key.Spacebar -> 
+                            groundPiece {model | active = sinkPiece model.active model.tablero}
+                        Key.C -> 
+                            holdPiece model
+                        Key.Escape -> 
+                            ( {model | state = Paused, pausedState = model.state},  Cmd.none)     
 
-        Pause paused -> ( {model | state = if paused then Paused else model.pausedState
-                                , pausedState = model.state}, Cmd.none)
+                                
+                        _ -> (model, Cmd.none)
+                                
+                else
+                    case event.keyCode of
+                        Key.Escape -> ( {model | state = if model.state == Paused then Playing else model.state },  Cmd.none)
+                        Key.Enter ->  (model, issueMsgAsCmd <| Countdown 3)
+                        _ -> (model, Cmd.none)
 
-        None -> (model, Cmd.none)
+            Pause paused -> ( {model | state = if paused then Paused else model.pausedState
+                                    , pausedState = model.state}, Cmd.none)
+
+            None -> (model, Cmd.none)
+
+
+issueMsgAsCmd : Msg -> Cmd Msg
+issueMsgAsCmd msg =
+    Task.perform identity (Task.succeed msg)
 
 
 holdPiece : Model -> ( Model, Cmd Msg ) 
@@ -147,8 +158,11 @@ groundPiece : Model -> ( Model, Cmd Msg )
 groundPiece model = 
     case model.active of
         Just piece ->  
-            if piece.grounded < 3 then 
-               ({ model | active = Just (testGrounded piece model.tablero)}, Cmd.none)
+            if piece.grounded < 3 then
+                if piece.grounded  > 0 && model.previousMsg == model.actualMsg && model.actualMsg == Advance then
+                    groundPiece {model | active = Just {piece | grounded = 3}}
+                else
+                    ({ model | active = Just (testGrounded piece model.tablero)}, Cmd.none)
             else
                 let 
                     testedPiece = testGrounded piece model.tablero
@@ -260,6 +274,7 @@ view model =
             [ viewStartButton model.state
             , viewPauseButton model.state
             , viewContador model.points
+            , viewControls
             , viewTablero model.tablero model.active countdown "t-tablero"
             , viewTablero (initTablero 4 6) model.hold 0 "t-hold"
             , viewTablero (initTablero 4 6 ) model.next 0 "t-next"]
@@ -287,6 +302,24 @@ viewContador puntos =
         [Html.span [ Attrs.class "t-count-points"] [text (toString puntos)]]
 
 
+viewControls : Html msg
+viewControls =
+    Html.section
+        [ Attrs.class "t-controls" ]
+        [ Html.h4 [] [ Html.text "Controles" ]
+        , Html.ul []
+            [ Html.li [] [ Html.b [] [text "\u{2190}"], text " Izquierda" ]
+            , Html.li [] [ Html.b [] [text "\u{2192}"], text " Derecha" ]
+            , Html.li [] [ Html.b [] [text "\u{2193}"], text " Abajo" ]
+            , Html.li [] [ Html.b [] [text "\u{2191}"], text " Rotar derecha" ]
+            , Html.li [] [ Html.b [] [text "Z"], text " Rotar izquierda" ]
+            , Html.li [] [ Html.b [] [text "Space"], text " Fijar pieza" ]
+            , Html.li [] [ Html.b [] [text "C"], text " Hold" ]
+            , Html.li [] [ Html.b [] [text "Esc"], text " Pause / Restart" ]
+            , Html.li [] [ Html.b [] [text "Enter"], text " Start" ]
+            ]
+        ]
+
 -- Subscribe to the `messageReceiver` port to hear about messages coming in
 -- from JS. Check out the index.html file to see how this is hooked up to a
 -- WebSocket.
@@ -310,6 +343,8 @@ init =
         , rotations = rotations
         , stepTime = 1000.0
         , holdAvailable = False
+        , previousMsg = None
+        , actualMsg = None
       }
     , Cmd.none
     )

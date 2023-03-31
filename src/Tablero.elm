@@ -2,13 +2,11 @@ module Tablero exposing (..)
 
 import Html exposing (Html, li, ul, text, span)
 import Matrix exposing(Matrix)
-import Html.Attributes as Attrs exposing (style)
+import Html.Attributes as Attrs
 import Array exposing (toList, Array)
 import List
 import Debug exposing (toString)
-import Tetramino exposing (Tetramino(..), Piece, Tile(..), duplicados)
-import Dict
-import Svg.Attributes exposing (origin)
+import Tetramino exposing (Tetramino(..), Piece, Tile(..))
 
 
 type alias Tablero = Matrix Tile

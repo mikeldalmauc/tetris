@@ -3,6 +3,9 @@
     flex-direction: column;
     overflow: hidden; 
 
+}
+
+#tetris * {
     -webkit-user-select: none; /* Safari */
     -ms-user-select: none; /* IE 10 and IE 11 */
     user-select: none; /* Standard syntax */
@@ -169,4 +172,29 @@
     margin-left: 500px;
     z-index: 30;
     margin-top: 20px;
+}
+
+.t-controls{
+    position: absolute;
+    margin-top: 250px;
+    margin-left: 550px;
+    display: flex;
+    font-size: 18px;
+    font-family: monospace;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.t-controls ul{
+    list-style: none;
+}
+
+.t-controls h4{
+    display: block;
+    margin-block-start: 1.33em;
+    margin-block-end: 0em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    font-weight: bold;
 }
