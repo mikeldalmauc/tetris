@@ -3,13 +3,12 @@ module Tablero exposing (..)
 import Html exposing (Html, li, ul, text, span)
 import Matrix exposing(Matrix)
 import Html.Attributes as Attrs exposing (style)
-import Array exposing (Array)
-import Array exposing (toList)
+import Array exposing (toList, Array)
 import List
 import Debug exposing (toString)
 import Tetramino exposing (Tetramino(..), Piece, Tile(..))
-import Array exposing (foldl)
-import Dict exposing (Dict)
+import Dict
+import Svg.Attributes exposing (origin)
 
 
 type alias Tablero = Matrix Tile
@@ -22,7 +21,7 @@ viewTablero : Tablero -> Maybe Piece -> Int -> String -> Html msg
 viewTablero tablero piece countdown class = 
     let
         (x, y) = Matrix.size tablero
-        renderedTablero = 
+        tableroWithActive = 
             case piece of 
                 Just p -> case class of 
                     "t-tablero" -> insertPiece p tablero
@@ -31,12 +30,26 @@ viewTablero tablero piece countdown class =
                                 O -> List.map (\b -> {x = b.x , y= b.y - 3}) p.blocks
                                 _ -> List.map (\b -> {x = b.x + 1, y= b.y - 2}) p.blocks} tablero
                 Nothing -> tablero
+        
+        tableroWithShadow = if not ("t-tablero" == class) then tableroWithActive
+            else
+                case piece of
+                    Just p -> 
+                        let
+                            shadow = shadowPosition p tablero
+                        in    
+                            case shadow of
+                                Nothing -> tableroWithActive
+                                Just s -> insertShadow s tableroWithActive
+                    Nothing -> tableroWithActive
+
+        
     in
         Html.section 
             [Attrs.class class]
             <| List.concat [
                   [viewCountdown countdown]
-                , List.map (\row -> viewRow (Matrix.getXs renderedTablero row) row) (List.range 0 (x - 1))
+                , List.map (\row -> viewRow (Matrix.getXs tableroWithShadow row) row) (List.range 0 (x - 1))
             ]
 
 
@@ -45,13 +58,59 @@ insertPiece piece tablero =
     List.foldl (\block newTablero -> Matrix.set newTablero (block.x+piece.origin.x) (block.y+piece.origin.y) (Filled piece.tetramino)) tablero piece.blocks 
 
 
+insertShadow : Piece -> Tablero -> Tablero
+insertShadow piece tablero =
+    List.foldl (\block newTablero -> Matrix.set newTablero (block.x+piece.origin.x) (block.y+piece.origin.y) (Shadow piece.tetramino)) tablero piece.blocks 
+
+
+-- Para cada bloque, mediamos la distancia con el 
+-- primer bloque inmediatamente debajo. La distancia mínima entre
+-- todas es donde se posaría la pieza y el valor a sumar a cada 
+-- elemento de piece para calcular las coordenadas de la sombra
+shadowPosition : Piece -> Tablero -> Maybe Piece
+shadowPosition piece tablero = 
+    if (testGrounded piece tablero).grounded > 0 then 
+        Nothing
+    else
+        let
+            -- disctancia desde el top del tablero
+            medirAltura = \block -> 
+                Matrix.getYs tablero (block.y + piece.origin.y)
+                |> Array.foldl (
+                        \tile (distance, found) -> 
+                            case tile of 
+                                Filled _ -> (distance, True)
+                                _ -> if found then (distance, found) else (distance + 1, False)
+                            ) 
+                (0, False) 
+                |> distanceToGround block
+            
+            distanceToGround = \block (distance, found)  -> 
+                if found then 
+                    (block, distance)
+                else 
+                    (block, Tuple.first <| Matrix.size tablero)
+
+            calcularDeltas = \blocks -> List.map (\(block, distance) -> distance - (block.x + piece.origin.x)- 1) blocks
+
+            sumarDeltas = \d ->
+                case d of
+                    Just deltaV -> Just { piece | origin = { x = piece.origin.x + deltaV, y = piece.origin.y}}
+                    Nothing -> Nothing
+        in
+            piece.blocks 
+                |> List.map medirAltura
+                |> calcularDeltas
+                |> List.minimum
+                |> sumarDeltas 
+
 testGrounded : Piece -> Tablero -> Piece
 testGrounded piece tablero = 
     let 
         piecesInContact = List.any 
             (\b -> case Matrix.get tablero (b.x + piece.origin.x + 1) (b.y + piece.origin.y) of
-                        Just (Empty) ->  False
                         Just (Filled _) -> True
+                        Just (_) ->  False
                         Nothing -> True
             ) piece.blocks 
     in
@@ -83,10 +142,14 @@ viewTile tile rIndex =
             li 
                 [ Attrs.classList [("t-tile", True), (cssClass tetramino, True)]]
                 []
+        Shadow tetramino -> 
+            li
+                [Attrs.classList [("t-tile-empty", True), ("t-shadow", True)] ]
+                []
         Empty -> 
             li
                 [Attrs.class "t-tile-empty"]
-                [text <| toString rIndex]
+                []
 
 
 

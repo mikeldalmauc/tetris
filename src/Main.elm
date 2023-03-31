@@ -174,6 +174,7 @@ clearRows piece model =
                 case tile of
                     Empty -> prev && False
                     Filled _ -> prev && True
+                    Shadow _ -> prev && False
             ) True 
             <| Matrix.getXs tfull row 
 
@@ -188,8 +189,8 @@ clearRows piece model =
 
         getTopNeighbour = \tneigh x y gap -> 
             case Matrix.get tneigh (x - gap) y of
-                Just Empty -> Empty
                 Just (Filled p) -> Filled p
+                Just _ -> Empty
                 Nothing -> Empty
 
         pushFilled = \(tpush, rows, maxRow) ->Tuple.pair 

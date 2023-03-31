@@ -8,7 +8,7 @@ import List exposing (foldl)
 import Array exposing (fromList, get)
 import Random
 
-type Tile = Empty | Filled Tetramino
+type Tile = Empty | Filled Tetramino | Shadow Tetramino
 
 type Tetramino = I | O | T | S | J | Z | L 
 
@@ -136,8 +136,8 @@ noOverlap tablero {x, y} =
     case (Matrix.get tablero x y) of
         Nothing -> False
         Just tile -> case tile of
-            Empty -> True
             Filled _ -> False
+            _ -> True
 
 
 addOriginOffset : Piece -> List Block

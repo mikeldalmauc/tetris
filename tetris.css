@@ -30,11 +30,19 @@
     flex-direction: row;
 }
 
-.t-tile, .t-tile-empty {
+.t-tile, .t-tile-empty, .t-shadow {
       min-width: 30px;
       min-height: 30px;
       background-color: rgb(10, 10, 10);
       list-style: none;
+}
+
+.t-shadow {
+    /*             inset? - shift right - shift down - spread - blur - color */
+    z-index: 20;
+    box-shadow: 
+        inset 0px 0px 15px 9px rgba(250, 250, 250, 0.35),
+        0px 0px 10px 5px rgba(242, 242, 242, 0.26);
 }
 
 .t-tile-empty {
