@@ -6,8 +6,8 @@ import Html.Attributes as Attrs
 import Array exposing (toList, Array)
 import List
 import Debug exposing (toString)
+import Dict exposing (Dict)
 import Tetramino exposing (Tetramino(..), Rotation(..), Rotations, kickOffset, Block, getBlocks)
-
 
 type Tile = Empty | Filled Tetramino | Shadow Tetramino
 
@@ -22,6 +22,19 @@ type alias Piece =
     , grounded : Int
     }
 
+pointsTable : Dict String Int
+pointsTable = 
+    Dict.fromList [
+         ("1" , 40)
+        ,("2" , 100)
+        ,("3" , 300)
+        ,("4" , 1200)
+    ]
+
+mapPoints : String -> Int
+mapPoints i = case Dict.get i pointsTable of
+    Just p -> p
+    Nothing -> 0
 
 initPiece : Tetramino -> Rotations -> Piece 
 initPiece t rts =

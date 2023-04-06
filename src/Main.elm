@@ -18,7 +18,7 @@ import Tetramino exposing (Tetramino(..), Rotations, tetraminoGenerator, rotatio
 import Time
 import Matrix
 import Array exposing (length)
-import Dict exposing (Dict)
+import Dict
 
 type alias Model =
 
@@ -37,7 +37,7 @@ type alias Model =
     }
 
 
-type GameState = Paused | Starting Int | Playing | NotStarted | Finished
+type GameState = NotStarted | Starting Int | Playing |  Paused | Finished
 
 type Msg =
       HandleKeyboardEvent KeyboardEvent
@@ -47,6 +47,25 @@ type Msg =
     | Advance
     | Pause Bool
     | None
+
+
+init : ( Model, Cmd Msg )
+init =
+    ( {   points = 0
+        , tablero = initTablero 20 10
+        , pausedState = NotStarted
+        , state = NotStarted
+        , active = Nothing
+        , next = Nothing
+        , hold = Nothing
+        , rotations = rotations
+        , stepTime = 1000.0
+        , holdAvailable = False
+        , previousMsg = None
+        , actualMsg = None
+      }
+    , Cmd.none
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -85,6 +104,7 @@ update msg modl =
                         Just _ -> groundPiece {model | active = advancePiece model.active model.tablero}
                 else
                     (model, Cmd.none)
+                    
             HandleKeyboardEvent event ->
                 if model.state == Playing then
                     case event.keyCode of
@@ -120,19 +140,6 @@ update msg modl =
             None -> (model, Cmd.none)
 
 
-pointsTable : Dict String Int
-pointsTable = 
-    Dict.fromList [
-         ("1" , 40)
-        ,("2" , 100)
-        ,("3" , 300)
-        ,("4" , 1200)
-    ]
-
-mapPoints : String -> Int
-mapPoints i = case Dict.get i pointsTable of
-    Just p -> p
-    Nothing -> 0
              
 issueMsgAsCmd : Msg -> Cmd Msg
 issueMsgAsCmd msg =
@@ -321,8 +328,8 @@ viewControls =
             , Html.li [] [ Html.b [] [text "Z"], text " Rotar izquierda" ]
             , Html.li [] [ Html.b [] [text "Space"], text " Fijar pieza" ]
             , Html.li [] [ Html.b [] [text "C"], text " Hold" ]
-            , Html.li [] [ Html.b [] [text "Esc"], text " Pause / Restart" ]
-            , Html.li [] [ Html.b [] [text "Enter"], text " Start" ]
+            , Html.li [] [ Html.b [] [text "Esc"], text " Pause / Unpause" ]
+            , Html.li [] [ Html.b [] [text "Enter"], text " Start / Restart if game is paused" ]
             ]
         , Html.h4 [] [text "Puntos"] 
         , Html.ul []
@@ -342,26 +349,6 @@ subscriptions model =
     Sub.batch
         [ onKeyDown (Json.map HandleKeyboardEvent decodeKeyboardEvent)
         , Time.every model.stepTime (\_ -> Advance)]
-
-
-init : ( Model, Cmd Msg )
-init =
-    ( {   points = 0
-        , tablero = initTablero 20 10
-        , pausedState = NotStarted
-        , state = NotStarted
-        , active = Nothing
-        , next = Nothing
-        , hold = Nothing
-        , rotations = rotations
-        , stepTime = 1000.0
-        , holdAvailable = False
-        , previousMsg = None
-        , actualMsg = None
-      }
-    , Cmd.none
-    )
-
 
 main : Program () Model Msg
 main =

@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 
 import Array exposing (fromList, get)
 import Random
+import Html exposing (a)
 
 type Tetramino = I | O | T | S | J | Z | L 
 
@@ -82,13 +83,13 @@ getBlocks t r rts =
 rotations : Rotations
 rotations = 
     Dict.fromList
-        [("I" , rotationsI)
-        ,("J" , rotationsJ)
-        ,("L" , rotationsL)
-        ,("O" , rotationsO)
-        ,("T" , rotationsT)
-        ,("S" , rotationsS)
-        ,("Z" , rotationsZ)
+        [ ("I" , rotationsI)
+        , ("J" , rotationsJ)
+        , ("L" , rotationsL)
+        , ("O" , rotationsO)
+        , ("T" , rotationsT)
+        , ("S" , rotationsS)
+        , ("Z" , rotationsZ)
         ]
     
 

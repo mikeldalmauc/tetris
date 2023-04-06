@@ -7,6 +7,9 @@ Tetris game in elm.
 Also includes functionalities as :
   - Basic wall kicking mechanism
   - Shadow preview
+  - Start countdown
+  - Leves go from 1 to 10 
+  - Level speed goes from 1 s per steps to 0.02s per steps, or 50 steps / s
   
 Other rules :
   - If a piece stays with no commands from user and touching floor for one it will be fixed to board
@@ -15,29 +18,29 @@ Other rules :
   - Pieces spawn off the board
 
 
- # Compilar el código
+ # Compile the código
 
  ```
 elm make src/Main.elm --output build/tetris.js
  ```
 
-Build optmimizado
+Build optmimized
  ```
 elm make src/Main.elm --output --optimize build/tetris.js
  ```
 
-Minimizado
+uglify
  ```
 uglifyjs build/tetris.js --compress "pure_funcs=[F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9],pure_getters,keep_fargs=false,unsafe_comps,unsafe" | uglifyjs --mangle --output build/tetris.min.js
  ```
 
-Si uglify no está disponible
+If uglify is not available
 ```
 npm install uglify-js --global
 ``` 
 
-# Arrancar la web en desarrollo
-Live server sobre app.html 
+# Open web on dev with visual studio
+Live server over app.html 
 
 # Añadir el juego a un documento html
   
@@ -60,20 +63,20 @@ Live server sobre app.html
     </script>
 ```
 
-# Referencia
+# References
 
-Información sobre tetris, reglas y mecánicas
+Información about tetris, rules and mechanics
 
 https://tetris.wiki/Super_Rotation_System
 
 https://tetris.wiki/Tetris_Dimensions
 
-Guia de elm
+Guide of elm
 
 https://guide.elm-lang.org/install/elm.html
 
 https://package.elm-lang.org/packages/perty/matrix/latest/Matrix
 
-Para saber más sobre optimizar codigo para producción Leer: 
+More about optimizing build 
 
 https://github.com/elm/compiler/blob/master/hints/optimize.md
